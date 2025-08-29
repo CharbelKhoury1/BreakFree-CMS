@@ -27,8 +27,17 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 // Test the connection
 supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
-    console.error('Supabase connection error:', error);
+    console.error('🔌 Supabase connection error:', error);
   } else {
-    console.log('Supabase connected successfully');
+    console.log('🔌 Supabase connected successfully', { hasSession: !!data.session });
+  }
+});
+
+// Test database connectivity
+supabase.from('profiles').select('count', { count: 'exact', head: true }).then(({ count, error }) => {
+  if (error) {
+    console.error('🔌 Supabase database connection error:', error);
+  } else {
+    console.log('🔌 Supabase database connected successfully', { profileCount: count });
   }
 });

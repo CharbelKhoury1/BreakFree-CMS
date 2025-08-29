@@ -37,10 +37,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 AuthContext.onAuthStateChange: Auth state changed', { 
+          event, 
+          hasSession: !!session, 
+          hasUser: !!session?.user,
+          userId: session?.user?.id 
+        });
+        
         setUser(session?.user ?? null);
         if (session?.user) {
+          console.log('🔄 AuthContext.onAuthStateChange: Loading user profile');
           await loadUserProfile(session.user.id);
         } else {
+          console.log('🔄 AuthContext.onAuthStateChange: No session, clearing profile');
           setProfile(null);
           setLoading(false);
         }
@@ -51,28 +60,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loadUserProfile = async (userId: string) => {
+    console.log('👤 AuthContext.loadUserProfile: Loading profile for user', { userId });
+    
     try {
+      console.log('👤 AuthContext.loadUserProfile: Calling authService.getUserProfile');
       const userProfile = await authService.getUserProfile(userId);
+      
+      console.log('👤 AuthContext.loadUserProfile: Profile loaded successfully', { 
+        profileId: userProfile.id, 
+        email: userProfile.email, 
+        role: userProfile.role 
+      });
+      
       setProfile(userProfile);
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('👤 AuthContext.loadUserProfile: Error loading profile', error);
       setProfile(null);
       // If profile loading fails, sign out the user
+      console.log('👤 AuthContext.loadUserProfile: Signing out due to profile load failure');
       await authService.signOut();
     } finally {
+      console.log('👤 AuthContext.loadUserProfile: Setting loading to false');
       setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('🔑 AuthContext.signIn: Starting sign in process', { email });
     setLoading(true);
+    
     try {
+      console.log('🔑 AuthContext.signIn: Calling authService.signIn');
       const response = await authService.signIn(email, password);
+      
+      console.log('🔑 AuthContext.signIn: AuthService response', { 
+        hasUser: !!response.user, 
+        hasSession: !!response.session, 
+        hasError: !!response.error 
+      });
+      
       if (response.error) {
+        console.error('🔑 AuthContext.signIn: Error in response', response.error);
         throw response.error;
       }
+      
+      console.log('🔑 AuthContext.signIn: Success, waiting for auth state change');
       // Don't set loading to false here - let the auth state change handle it
     } catch (error) {
+      console.error('🔑 AuthContext.signIn: Sign in failed', error);
       // Only set loading to false on error, successful auth will be handled by onAuthStateChange
       setLoading(false);
       throw error;
