@@ -77,38 +77,38 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </li>
                 );
               })}
-              {/* Admin Navigation as Clickable Div */}
-              <li>
-                <div
-                  onClick={handleAdminClick}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleAdminClick();
-                    }
-                  }}
-                  className={`
-                    flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150 cursor-pointer
-                    ${location.pathname === '/admin'
-                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500 dark:border-blue-400' 
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }
-                  `}
-                >
-                  <Shield className="w-5 h-5 mr-3" />
-                  Admin
-                </div>
-              </li>
+
             </ul>
           </nav>
 
           {/* Footer */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                A
+            <div 
+              className="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors duration-150"
+              onClick={handleAdminClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleAdminClick();
+                }
+              }}
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-500 dark:bg-blue-600 flex items-center justify-center">
+                {/* Profile image will be displayed here when available */}
+                <img 
+                  src="https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20headshot%20of%20admin%20user%20with%20friendly%20expression&image_size=square" 
+                  alt="Admin User" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-full h-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-white font-semibold text-sm" style={{display: 'none'}}>
+                  A
+                </div>
               </div>
               <div className="ml-3 flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Admin User</p>

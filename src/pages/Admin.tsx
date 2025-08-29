@@ -181,7 +181,7 @@ export function Admin() {
 
         {/* Admin Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {adminSections.filter(section => section.id !== 'profile').map((section) => {
+          {adminSections.filter(section => section.id !== 'profile' && section.id !== 'monitoring').map((section) => {
             const Icon = section.icon;
             
             return (
