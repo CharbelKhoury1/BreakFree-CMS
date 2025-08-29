@@ -66,7 +66,7 @@
 
 .ProseMirror p.is-editor-empty:first-child::before {
   color: #adb5bd;
-  content: attr(data-placeholder);
+  content: "";
   float: left;
   height: 0;
   pointer-events: none;
@@ -94,13 +94,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background-color: #f5f5f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  background-color: #d1d5db;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  background-color: #9ca3af;
 }

@@ -4,25 +4,7 @@ import { Plus } from 'lucide-react';
 import { DashboardLayout } from '../components/Layout/DashboardLayout';
 import { BlogTable } from '../components/Blog/BlogTable';
 import { BlogFilters } from '../components/Blog/BlogFilters';
-import { Button } from '../components/ui/button';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '../components/ui/pagination';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../components/ui/alert-dialog';
+// Replace missing UI components with native elements
 import { useBlogs } from '../hooks/useBlogs';
 import { BlogService } from '../services/blogService';
 import type { Blog } from '../types/blog';
@@ -105,10 +87,10 @@ export function BlogList() {
             <p className="text-gray-600">Manage your blog content</p>
           </div>
           <Link to="/blogs/new">
-            <Button className="flex items-center space-x-2">
+            <button className="inline-flex items-center space-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
               <Plus className="w-4 h-4" />
               <span>New Post</span>
-            </Button>
+            </button>
           </Link>
         </div>
 
@@ -130,61 +112,61 @@ export function BlogList() {
 
         {/* Pagination */}
         {blogs.totalPages > 1 && (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(Math.max(1, blogs.page - 1))}
-                  className={blogs.page <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-              
-              {Array.from({ length: Math.min(5, blogs.totalPages) }, (_, i) => {
-                const page = i + 1;
-                return (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(page)}
-                      isActive={page === blogs.page}
-                      className="cursor-pointer"
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(Math.min(blogs.totalPages, blogs.page + 1))}
-                  className={blogs.page >= blogs.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => handlePageChange(Math.max(1, blogs.page - 1))}
+              className={`px-3 py-1 border rounded ${blogs.page <= 1 ? 'pointer-events-none opacity-50' : ''}`}
+            >
+              Prev
+            </button>
+            {Array.from({ length: Math.min(5, blogs.totalPages) }, (_, i) => {
+              const page = i + 1;
+              const isActive = page === blogs.page;
+              return (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 border rounded ${isActive ? 'bg-gray-900 text-white' : ''}`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => handlePageChange(Math.min(blogs.totalPages, blogs.page + 1))}
+              className={`px-3 py-1 border rounded ${blogs.page >= blogs.totalPages ? 'pointer-events-none opacity-50' : ''}`}
+            >
+              Next
+            </button>
+          </div>
         )}
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!blogToDelete} onOpenChange={() => setBlogToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete "{blogToDelete?.title}"? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDelete} 
-                disabled={deleting}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {deleting ? 'Deleting...' : 'Delete'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Simple Delete Confirmation */}
+        {blogToDelete && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow max-w-sm w-full p-6 space-y-4">
+              <h3 className="text-lg font-semibold">Delete Blog Post</h3>
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete "{blogToDelete.title}"? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setBlogToDelete(null)}
+                  className="px-4 py-2 text-sm border rounded hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

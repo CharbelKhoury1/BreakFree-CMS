@@ -4,8 +4,7 @@ import { Plus, TrendingUp, Users, FileText } from 'lucide-react';
 import { DashboardLayout } from '../components/Layout/DashboardLayout';
 import { StatsCards } from '../components/Dashboard/StatsCards';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+// Replaced missing UI library components with basic elements
 import { BlogService } from '../services/blogService';
 import type { Blog } from '../types/blog';
 
@@ -60,10 +59,10 @@ export function Dashboard() {
             <p className="text-gray-600">Welcome back! Here's your blog overview.</p>
           </div>
           <Link to="/blogs/new">
-            <Button className="flex items-center space-x-2">
+            <button className="inline-flex items-center space-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
               <Plus className="w-4 h-4" />
               <span>New Post</span>
-            </Button>
+            </button>
           </Link>
         </div>
 
@@ -83,43 +82,43 @@ export function Dashboard() {
           </div>
 
           {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b">
+              <h2 className="text-lg font-semibold">Quick Actions</h2>
+            </div>
+            <div className="p-6 space-y-3">
               <Link to="/blogs/new" className="block">
-                <Button variant="outline" className="w-full justify-start">
+                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Post
-                </Button>
+                </button>
               </Link>
               <Link to="/blogs" className="block">
-                <Button variant="outline" className="w-full justify-start">
+                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
                   <FileText className="w-4 h-4 mr-2" />
                   View All Posts
-                </Button>
+                </button>
               </Link>
               <Link to="/settings" className="block">
-                <Button variant="outline" className="w-full justify-start">
+                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
                   <Users className="w-4 h-4 mr-2" />
                   Manage Settings
-                </Button>
+                </button>
               </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Performance Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b">
+              <h2 className="text-lg font-semibold flex items-center space-x-2">
                 <TrendingUp className="w-5 h-5" />
                 <span>Content Performance</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+            </div>
+            <div className="p-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Average views per post</span>
@@ -134,30 +133,30 @@ export function Dashboard() {
                   </span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>System Status</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b">
+              <h2 className="text-lg font-semibold">System Status</h2>
+            </div>
+            <div className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Database</span>
-                  <Badge variant="default">Connected</Badge>
+                  <span className="inline-flex items-center rounded-md bg-green-100 text-green-700 text-xs font-medium px-2 py-1">Connected</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Storage</span>
-                  <Badge variant="default">Active</Badge>
+                  <span className="inline-flex items-center rounded-md bg-green-100 text-green-700 text-xs font-medium px-2 py-1">Active</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Authentication</span>
-                  <Badge variant="default">Secure</Badge>
+                  <span className="inline-flex items-center rounded-md bg-green-100 text-green-700 text-xs font-medium px-2 py-1">Secure</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

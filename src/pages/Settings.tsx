@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '../components/Layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Button } from '../components/ui/button';
-import { Avatar } from '../components/ui/avatar';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthService } from '../services/authService';
 
@@ -42,16 +37,16 @@ export function Settings() {
           <p className="text-gray-600">Manage your account settings</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold">Profile Information</h2>
+          </div>
+          <div className="p-6">
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="flex items-center space-x-4">
-                <Avatar className="w-16 h-16 bg-blue-500 text-white flex items-center justify-center text-xl font-semibold">
+                <div className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center text-xl font-semibold">
                   {profile?.full_name?.[0] || profile?.email[0].toUpperCase()}
-                </Avatar>
+                </div>
                 <div>
                   <h3 className="font-medium">{profile?.full_name || 'Admin User'}</h3>
                   <p className="text-sm text-gray-500">{profile?.email}</p>
@@ -60,22 +55,23 @@ export function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
+                <label htmlFor="fullName" className="text-sm font-medium">Full Name</label>
+                <input
                   id="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
+                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <input
                   id="email"
                   value={profile?.email || ''}
                   disabled
-                  className="bg-gray-50"
+                  className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
                 />
                 <p className="text-xs text-gray-500">Email cannot be changed</p>
               </div>
@@ -86,18 +82,22 @@ export function Settings() {
                 </div>
               )}
 
-              <Button type="submit" disabled={loading}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
                 {loading ? 'Updating...' : 'Update Profile'}
-              </Button>
+              </button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>System Information</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold">System Information</h2>
+          </div>
+          <div className="p-6">
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Version</span>
@@ -112,8 +112,8 @@ export function Settings() {
                 <span className="text-sm font-medium">January 2025</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { FileText, Eye, Users, TrendingUp } from 'lucide-react';
 
 interface StatsCardsProps {
@@ -45,14 +44,14 @@ export function StatsCards({ totalBlogs, publishedBlogs, totalViews, loading }: 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
+          <div key={i} className="bg-white rounded-lg shadow p-6">
+            <div className="pb-2">
               <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-6 pt-0">
               <div className="w-16 h-8 bg-gray-200 rounded animate-pulse" />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -61,19 +60,19 @@ export function StatsCards({ totalBlogs, publishedBlogs, totalViews, loading }: 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat) => (
-        <Card key={stat.title} className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+        <div key={stat.title} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-row items-center justify-between pb-2">
+            <h3 className="text-sm font-medium text-gray-600">
               {stat.title}
-            </CardTitle>
+            </h3>
             <div className={`w-8 h-8 ${stat.bgColor} rounded-full flex items-center justify-center`}>
               <stat.icon className={`w-4 h-4 ${stat.color}`} />
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="p-6 pt-0">
             <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   );

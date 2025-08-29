@@ -3,13 +3,6 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { useDropzone } from 'react-dropzone';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Badge } from '../ui/badge';
 import { 
   Bold, 
   Italic, 
@@ -48,6 +41,7 @@ export function BlogEditor({ blog, onSave, onCancel, loading }: BlogEditorProps)
   const [metaDescription, setMetaDescription] = useState(blog?.meta_description || '');
   const [uploading, setUploading] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('editor');
 
   const editor = useEditor({
     extensions: [
@@ -170,160 +164,178 @@ export function BlogEditor({ blog, onSave, onCancel, loading }: BlogEditorProps)
               Auto-saving...
             </span>
           )}
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
             Cancel
-          </Button>
-          <Button 
+          </button>
+          <button 
             type="submit" 
             disabled={loading || !title || !content}
-            className="flex items-center space-x-2"
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <Save className="w-4 h-4" />
             <span>{loading ? 'Saving...' : 'Save Post'}</span>
-          </Button>
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Post Content</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="pb-4">
+              <h2 className="text-lg font-semibold">Post Content</h2>
+            </div>
+            <div className="p-6 pt-0 space-y-4">
               <div>
-                <Label htmlFor="title">Title *</Label>
-                <Input
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter post title"
                   required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <Label htmlFor="slug">Slug</Label>
-                <Input
+                <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                <input
                   id="slug"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="post-url-slug"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
-              <Tabs defaultValue="editor" className="w-full">
-                <TabsList>
-                  <TabsTrigger value="editor">Editor</TabsTrigger>
-                  <TabsTrigger value="preview">Preview</TabsTrigger>
-                </TabsList>
+              {/* Simple Tabs */}
+              <div className="w-full">
+                <div className="flex border-b border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('editor')}
+                    className={`px-4 py-2 text-sm font-medium ${
+                      activeTab === 'editor'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Editor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('preview')}
+                    className={`px-4 py-2 text-sm font-medium ${
+                      activeTab === 'preview'
+                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
                 
-                <TabsContent value="editor" className="space-y-2">
-                  {/* Editor Toolbar */}
-                  <div className="flex items-center space-x-1 p-3 bg-gray-50 rounded-t-lg border">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().toggleBold().run()}
-                      className={editor.isActive('bold') ? 'bg-gray-200' : ''}
-                    >
-                      <Bold className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().toggleItalic().run()}
-                      className={editor.isActive('italic') ? 'bg-gray-200' : ''}
-                    >
-                      <Italic className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().toggleBulletList().run()}
-                      className={editor.isActive('bulletList') ? 'bg-gray-200' : ''}
-                    >
-                      <List className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                      className={editor.isActive('orderedList') ? 'bg-gray-200' : ''}
-                    >
-                      <ListOrdered className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                      className={editor.isActive('blockquote') ? 'bg-gray-200' : ''}
-                    >
-                      <Quote className="w-4 h-4" />
-                    </Button>
-                    <div className="w-px h-6 bg-gray-300 mx-2" />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().undo().run()}
-                      disabled={!editor.can().undo()}
-                    >
-                      <Undo className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => editor.chain().focus().redo().run()}
-                      disabled={!editor.can().redo()}
-                    >
-                      <Redo className="w-4 h-4" />
-                    </Button>
-                  </div>
+                {activeTab === 'editor' && (
+                  <div className="space-y-2">
+                    {/* Editor Toolbar */}
+                    <div className="flex items-center space-x-1 p-3 bg-gray-50 rounded-t-lg border">
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                        className={`p-2 rounded ${editor.isActive('bold') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                      >
+                        <Bold className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().toggleItalic().run()}
+                        className={`p-2 rounded ${editor.isActive('italic') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                      >
+                        <Italic className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().toggleBulletList().run()}
+                        className={`p-2 rounded ${editor.isActive('bulletList') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                        className={`p-2 rounded ${editor.isActive('orderedList') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                      >
+                        <ListOrdered className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                        className={`p-2 rounded ${editor.isActive('blockquote') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                      >
+                        <Quote className="w-4 h-4" />
+                      </button>
+                      <div className="w-px h-6 bg-gray-300 mx-2" />
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().undo().run()}
+                        disabled={!editor.can().undo()}
+                        className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        <Undo className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => editor.chain().focus().redo().run()}
+                        disabled={!editor.can().redo()}
+                        className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        <Redo className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                  <EditorContent 
-                    editor={editor} 
-                    className="min-h-[400px] p-4 border border-t-0 rounded-b-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
-                  />
-                </TabsContent>
+                    <EditorContent 
+                      editor={editor} 
+                      className="min-h-[400px] p-4 border border-t-0 rounded-b-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
+                    />
+                  </div>
+                )}
                 
-                <TabsContent value="preview">
+                {activeTab === 'preview' && (
                   <div 
                     className="min-h-[400px] p-4 border rounded-lg prose prose-lg max-w-none"
                     dangerouslySetInnerHTML={{ __html: content }}
                   />
-                </TabsContent>
-              </Tabs>
+                )}
+              </div>
 
               <div>
-                <Label htmlFor="excerpt">Excerpt</Label>
-                <Textarea
+                <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
+                <textarea
                   id="excerpt"
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
                   placeholder="Brief description of the post (optional - will be auto-generated)"
                   rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Publish Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Publish Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="pb-4">
+              <h2 className="text-lg font-semibold">Publish Settings</h2>
+            </div>
+            <div className="p-6 pt-0 space-y-4">
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -332,17 +344,17 @@ export function BlogEditor({ blog, onSave, onCancel, loading }: BlogEditorProps)
                   onChange={(e) => setPublished(e.target.checked)}
                   className="rounded"
                 />
-                <Label htmlFor="published">Publish immediately</Label>
+                <label htmlFor="published" className="text-sm font-medium text-gray-700">Publish immediately</label>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Featured Image */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Featured Image</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="pb-4">
+              <h2 className="text-lg font-semibold">Featured Image</h2>
+            </div>
+            <div className="p-6 pt-0">
               {featuredImage ? (
                 <div className="space-y-3">
                   <img
@@ -350,14 +362,13 @@ export function BlogEditor({ blog, onSave, onCancel, loading }: BlogEditorProps)
                     alt="Featured"
                     className="w-full h-32 object-cover rounded-lg"
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
                     onClick={() => setFeaturedImage('')}
-                    className="w-full"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     Remove Image
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div
@@ -380,67 +391,69 @@ export function BlogEditor({ blog, onSave, onCancel, loading }: BlogEditorProps)
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Tags */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Tags</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="pb-4">
+              <h2 className="text-lg font-semibold">Tags</h2>
+            </div>
+            <div className="p-6 pt-0 space-y-3">
+              <input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={addTag}
                 placeholder="Type a tag and press Enter"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <Badge
+                    <span
                       key={tag}
-                      variant="secondary"
-                      className="flex items-center space-x-1 cursor-pointer"
+                      className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 cursor-pointer hover:bg-gray-200"
                       onClick={() => removeTag(tag)}
                     >
                       <span>{tag}</span>
                       <X className="w-3 h-3" />
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* SEO Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>SEO Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="pb-4">
+              <h2 className="text-lg font-semibold">SEO Settings</h2>
+            </div>
+            <div className="p-6 pt-0 space-y-4">
               <div>
-                <Label htmlFor="metaTitle">Meta Title</Label>
-                <Input
+                <label htmlFor="metaTitle" className="block text-sm font-medium text-gray-700 mb-1">Meta Title</label>
+                <input
                   id="metaTitle"
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
                   placeholder="SEO title (optional)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
-                <Label htmlFor="metaDescription">Meta Description</Label>
-                <Textarea
+                <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+                <textarea
                   id="metaDescription"
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
                   placeholder="SEO description (optional)"
                   rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </form>

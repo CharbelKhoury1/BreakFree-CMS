@@ -1,6 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import type { Blog } from '../../types/blog';
 
@@ -12,11 +10,11 @@ interface RecentActivityProps {
 export function RecentActivity({ recentBlogs, loading }: RecentActivityProps) {
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="pb-4">
+          <h2 className="text-lg font-semibold">Recent Activity</h2>
+        </div>
+        <div className="p-6 pt-0">
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center space-x-4">
@@ -28,17 +26,17 @@ export function RecentActivity({ recentBlogs, loading }: RecentActivityProps) {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="pb-4">
+        <h2 className="text-lg font-semibold">Recent Activity</h2>
+      </div>
+      <div className="p-6 pt-0">
         <div className="space-y-4">
           {recentBlogs.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No recent activity</p>
@@ -53,9 +51,13 @@ export function RecentActivity({ recentBlogs, loading }: RecentActivityProps) {
                     {blog.title}
                   </p>
                   <div className="flex items-center space-x-2 mt-1">
-                    <Badge variant={blog.published ? 'default' : 'secondary'}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      blog.published 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
                       {blog.published ? 'Published' : 'Draft'}
-                    </Badge>
+                    </span>
                     <span className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(blog.updated_at), { addSuffix: true })}
                     </span>
@@ -65,7 +67,7 @@ export function RecentActivity({ recentBlogs, loading }: RecentActivityProps) {
             ))
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
