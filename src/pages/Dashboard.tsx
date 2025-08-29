@@ -55,8 +55,8 @@ export function Dashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Welcome back! Here's your blog overview.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-300">Welcome back! Here's your blog overview.</p>
           </div>
           <Link to="/blogs/new">
             <button className="inline-flex items-center space-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
@@ -82,25 +82,25 @@ export function Dashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold">Quick Actions</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</h2>
             </div>
             <div className="p-6 space-y-3">
               <Link to="/blogs/new" className="block">
-                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
+                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Post
                 </button>
               </Link>
               <Link to="/blogs" className="block">
-                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
+                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <FileText className="w-4 h-4 mr-2" />
                   View All Posts
                 </button>
               </Link>
               <Link to="/settings" className="block">
-                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">
+                <button className="w-full justify-start inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <Users className="w-4 h-4 mr-2" />
                   Manage Settings
                 </button>
@@ -111,9 +111,9 @@ export function Dashboard() {
 
         {/* Performance Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold flex items-center space-x-2">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
                 <TrendingUp className="w-5 h-5" />
                 <span>Content Performance</span>
               </h2>
@@ -121,14 +121,14 @@ export function Dashboard() {
             <div className="p-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Average views per post</span>
-                  <span className="font-semibold">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Average views per post</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
                     {stats.totalBlogs > 0 ? Math.round(stats.totalViews / stats.totalBlogs) : 0}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Published content</span>
-                  <span className="font-semibold">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Published content</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
                     {stats.totalBlogs > 0 ? Math.round((stats.publishedBlogs / stats.totalBlogs) * 100) : 0}%
                   </span>
                 </div>
@@ -136,23 +136,23 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold">System Status</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Status</h2>
             </div>
             <div className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Database</span>
-                  <span className="inline-flex items-center rounded-md bg-green-100 text-green-700 text-xs font-medium px-2 py-1">Connected</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Database</span>
+                  <span className="inline-flex items-center rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium px-2 py-1">Connected</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Storage</span>
-                  <span className="inline-flex items-center rounded-md bg-green-100 text-green-700 text-xs font-medium px-2 py-1">Active</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Storage</span>
+                  <span className="inline-flex items-center rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium px-2 py-1">Active</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Authentication</span>
-                  <span className="inline-flex items-center rounded-md bg-green-100 text-green-700 text-xs font-medium px-2 py-1">Secure</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Authentication</span>
+                  <span className="inline-flex items-center rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium px-2 py-1">Secure</span>
                 </div>
               </div>
             </div>

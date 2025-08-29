@@ -7,8 +7,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, profile, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
 
+  // TEMPORARY: Bypass authentication check for development
+  // TODO: Restore authentication check when login is re-enabled
+  /*
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -17,9 +20,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user || !profile || !isAdmin) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
+  */
 
   return <>{children}</>;
 }

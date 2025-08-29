@@ -1,13 +1,12 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FileText, 
   Settings, 
-  LogOut, 
-  PenTool 
+  PenTool,
+  Shield
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -15,8 +14,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { signOut, profile } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -25,34 +24,33 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+  const handleAdminClick = () => {
+    navigate('/admin');
+    onClose();
   };
+
+
 
   return (
     <>
       {/* Mobile backdrop */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-black dark:bg-opacity-70 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
       
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 z-50 h-full w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        fixed left-0 top-0 z-50 h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900">BreakFree CMS</h1>
-            <p className="text-sm text-gray-600 mt-1">Admin Dashboard</p>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">BreakFree CMS</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Admin Dashboard</p>
           </div>
 
           {/* Navigation */}
@@ -68,8 +66,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       className={`
                         flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150
                         ${isActive 
-                          ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500' 
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500 dark:border-blue-400' 
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }
                       `}
                     >
@@ -79,31 +77,44 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </li>
                 );
               })}
+              {/* Admin Navigation as Clickable Div */}
+              <li>
+                <div
+                  onClick={handleAdminClick}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleAdminClick();
+                    }
+                  }}
+                  className={`
+                    flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150 cursor-pointer
+                    ${location.pathname === '/admin'
+                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500 dark:border-blue-400' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }
+                  `}
+                >
+                  <Shield className="w-5 h-5 mr-3" />
+                  Admin
+                </div>
+              </li>
             </ul>
           </nav>
 
-          {/* User section */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                {profile?.full_name?.[0] || profile?.email[0].toUpperCase()}
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                A
               </div>
               <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {profile?.full_name || 'Admin User'}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {profile?.email}
-                </p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Admin User</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Dashboard Access</p>
               </div>
             </div>
-            <button 
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </button>
           </div>
         </div>
       </div>

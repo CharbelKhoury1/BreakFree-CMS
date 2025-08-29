@@ -3,7 +3,6 @@ export interface Blog {
   title: string;
   content: string;
   excerpt: string | null;
-  slug: string;
   author_id: string;
   published: boolean;
   featured_image: string | null;
@@ -24,7 +23,6 @@ export interface CreateBlogInput {
   title: string;
   content: string;
   excerpt?: string;
-  slug?: string;
   published?: boolean;
   featured_image?: string;
   tags?: string[];
@@ -36,7 +34,6 @@ export interface UpdateBlogInput {
   title?: string;
   content?: string;
   excerpt?: string;
-  slug?: string;
   published?: boolean;
   featured_image?: string;
   tags?: string[];

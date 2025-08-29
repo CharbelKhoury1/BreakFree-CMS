@@ -36,7 +36,6 @@ export interface Database {
           title: string;
           content: string;
           excerpt: string | null;
-          slug: string;
           author_id: string;
           published: boolean;
           featured_image: string | null;
@@ -52,7 +51,6 @@ export interface Database {
           title: string;
           content: string;
           excerpt?: string | null;
-          slug: string;
           author_id: string;
           published?: boolean;
           featured_image?: string | null;
@@ -68,7 +66,6 @@ export interface Database {
           title?: string;
           content?: string;
           excerpt?: string | null;
-          slug?: string;
           author_id?: string;
           published?: boolean;
           featured_image?: string | null;
@@ -85,10 +82,6 @@ export interface Database {
       increment_blog_views: {
         Args: { blog_id: string };
         Returns: void;
-      };
-      generate_slug: {
-        Args: { title: string };
-        Returns: string;
       };
     };
   };

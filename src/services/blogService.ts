@@ -14,12 +14,6 @@ export class BlogService {
       throw new Error('Authentication required');
     }
 
-    // Generate slug if not provided
-    let slug = blogData.slug;
-    if (!slug) {
-      slug = await this.generateSlug(blogData.title);
-    }
-
     // Generate excerpt if not provided
     let excerpt = blogData.excerpt;
     if (!excerpt && blogData.content) {
@@ -30,7 +24,6 @@ export class BlogService {
       .from('blogs')
       .insert({
         ...blogData,
-        slug,
         excerpt,
         author_id: currentUser.data.user.id,
       })
@@ -49,11 +42,6 @@ export class BlogService {
       ...updates, 
       updated_at: new Date().toISOString() 
     };
-
-    // Generate new slug if title changed
-    if (updates.title && !updates.slug) {
-      updateData.slug = await this.generateSlug(updates.title);
-    }
 
     // Generate excerpt if content changed but no excerpt provided
     if (updates.content && !updates.excerpt) {
@@ -180,52 +168,44 @@ export class BlogService {
   }
 
   async uploadImage(file: File): Promise<string> {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
+    }
+
+    // Validate file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      throw new Error('File size too large. Maximum size is 50MB.');
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `blog-images/${fileName}`;
+    const filePath = `${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('blog-images')
-      .upload(filePath, file);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('blog-images')
+        .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
-    const { data } = supabase.storage
-      .from('blog-images')
-      .getPublicUrl(filePath);
+      const { data } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(filePath);
 
-    return data.publicUrl;
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      throw error;
+    }
   }
 
-  private async generateSlug(title: string): Promise<string> {
-    const baseSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
 
-    // Check for existing slugs
-    const { data, error } = await supabase
-      .from('blogs')
-      .select('slug')
-      .ilike('slug', `${baseSlug}%`);
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      return baseSlug;
-    }
-
-    // Find the next available slug
-    let counter = 1;
-    let newSlug = `${baseSlug}-${counter}`;
-    
-    while (data.some(blog => blog.slug === newSlug)) {
-      counter++;
-      newSlug = `${baseSlug}-${counter}`;
-    }
-
-    return newSlug;
-  }
 
   private generateExcerpt(content: string, maxLength = 160): string {
     // Strip HTML tags and get plain text

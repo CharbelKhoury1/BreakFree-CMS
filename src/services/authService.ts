@@ -1,17 +1,26 @@
 import { supabase } from '../lib/supabase';
 import type { Profile, AuthResponse, ProfileUpdate } from '../types/auth';
 import type { Database } from '../types/database';
+import { withTimeout, ConnectionError, TimeoutError, AuthenticationError } from '../utils/timeout';
 
 export class AuthService {
   async signIn(email: string, password: string): Promise<AuthResponse> {
     console.log('🔐 AuthService.signIn: Starting authentication process', { email });
     
     try {
-      console.log('🔐 AuthService.signIn: Calling Supabase auth.signInWithPassword');
-      const { data, error } = await supabase.auth.signInWithPassword({
+      console.log('🔐 AuthService.signIn: Calling Supabase auth.signInWithPassword with timeout');
+      
+      // Add timeout to prevent infinite loading
+      const authPromise = supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
+      const { data, error } = await withTimeout(
+        authPromise,
+        10000, // 10 second timeout
+        'Authentication request timed out. Please check your connection and try again.'
+      );
 
       console.log('🔐 AuthService.signIn: Supabase response', { 
         hasUser: !!data.user, 
@@ -22,31 +31,39 @@ export class AuthService {
 
       if (error) {
         console.error('🔐 AuthService.signIn: Supabase authentication error', error);
-        throw error;
-      }
-
-      // Check if user is admin
-      if (data.user) {
-        console.log('🔐 AuthService.signIn: User authenticated, checking admin status', { userId: data.user.id });
-        const isUserAdmin = await this.isAdmin(data.user.id);
-        console.log('🔐 AuthService.signIn: Admin check result', { isUserAdmin });
         
-        if (!isUserAdmin) {
-          console.warn('🔐 AuthService.signIn: User is not admin, signing out');
-          await this.signOut();
-          throw new Error('Access denied. Admin privileges required.');
+        // Handle specific error types
+        if (error.message?.includes('Invalid login credentials')) {
+          throw new AuthenticationError('Invalid email or password. Please check your credentials and try again.');
         }
         
-        console.log('🔐 AuthService.signIn: Admin verification successful');
-      } else {
+        if (error.message?.includes('connection') || error.message?.includes('network')) {
+          throw new ConnectionError('Unable to connect to authentication service. Please check your internet connection.');
+        }
+        
+        throw new AuthenticationError(error.message || 'Authentication failed. Please try again.');
+      }
+
+      if (!data.user) {
         console.error('🔐 AuthService.signIn: No user data received from Supabase');
+        throw new AuthenticationError('Authentication failed. No user data received.');
       }
 
       console.log('🔐 AuthService.signIn: Authentication completed successfully');
       return { user: data.user, session: data.session };
     } catch (error) {
       console.error('🔐 AuthService.signIn: Authentication failed', error);
-      return { user: null, session: null, error };
+      
+      // Re-throw custom errors as-is
+      if (error instanceof TimeoutError || error instanceof ConnectionError || error instanceof AuthenticationError) {
+        return { user: null, session: null, error };
+      }
+      
+      // Handle unexpected errors
+      const authError = new AuthenticationError(
+        error instanceof Error ? error.message : 'An unexpected error occurred during authentication.'
+      );
+      return { user: null, session: null, error: authError };
     }
   }
 
@@ -62,14 +79,37 @@ export class AuthService {
   }
 
   async getUserProfile(userId: string): Promise<Profile> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single() as { data: Database['public']['Tables']['profiles']['Row'] | null, error: any };
+    try {
+      const profilePromise = supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single() as Promise<{ data: Database['public']['Tables']['profiles']['Row'] | null, error: any }>;
+      
+      const { data, error } = await withTimeout(
+        profilePromise,
+        8000, // 8 second timeout
+        'Failed to load user profile. Please check your connection and try again.'
+      );
 
-    if (error) throw error;
-    return data as Profile;
+      if (error) {
+        if (error.message?.includes('connection') || error.message?.includes('network')) {
+          throw new ConnectionError('Unable to connect to user profile service. Please check your internet connection.');
+        }
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('User profile not found.');
+      }
+      
+      return data as Profile;
+    } catch (error) {
+      if (error instanceof TimeoutError || error instanceof ConnectionError) {
+        throw error;
+      }
+      throw new Error(error instanceof Error ? error.message : 'Failed to load user profile.');
+    }
   }
 
   async updateProfile(userId: string, updates: ProfileUpdate): Promise<Profile> {

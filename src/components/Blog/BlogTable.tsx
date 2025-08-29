@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { 
@@ -21,12 +21,27 @@ interface BlogTableProps {
 
 export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }: BlogTableProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    if (openDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openDropdown]);
 
   if (loading) {
     return (
       <div className="space-y-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
+          <div key={i} className="h-16 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
         ))}
       </div>
     );
@@ -35,9 +50,9 @@ export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }:
   if (blogs.length === 0) {
     return (
       <div className="text-center py-12">
-        <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No blog posts found</h3>
-        <p className="text-gray-500 mb-6">Get started by creating your first blog post.</p>
+        <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No blog posts found</h3>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">Get started by creating your first blog post.</p>
         <Link to="/blogs/new">
           <button className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
             Create New Post
@@ -48,36 +63,36 @@ export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }:
   }
 
   return (
-    <div className="bg-white rounded-lg border overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Author</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Views</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {blogs.map((blog) => (
-              <tr key={blog.id} className="hover:bg-gray-50">
+              <tr key={blog.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                 <td className="px-6 py-4">
                   <div className="space-y-1">
-                    <h3 className="font-medium text-gray-900 line-clamp-1">
+                    <h3 className="font-medium text-gray-900 dark:text-white line-clamp-1">
                       {blog.title}
                     </h3>
                     {blog.tags && blog.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {blog.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300">
+                          <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-600">
                             {tag}
                           </span>
                         ))}
                         {blog.tags.length > 3 && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-600">
                             +{blog.tags.length - 3}
                           </span>
                         )}
@@ -88,72 +103,83 @@ export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }:
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     blog.published 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                   }`}>
                     {blog.published ? 'Published' : 'Draft'}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm">
-                    <p className="font-medium">{blog.author?.full_name || 'Unknown'}</p>
-                    <p className="text-gray-500">{blog.author?.email}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{blog.author?.full_name || 'Unknown'}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{blog.author?.email}</p>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center space-x-1">
-                    <Eye className="w-4 h-4 text-gray-400" />
+                  <div className="flex items-center space-x-1 text-gray-900 dark:text-white">
+                    <Eye className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                     <span>{blog.view_count.toLocaleString()}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {formatDistanceToNow(new Date(blog.created_at), { addSuffix: true })}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="relative">
+                  <div className="relative" ref={openDropdown === blog.id ? dropdownRef : null}>
                     <button
-                      onClick={() => setOpenDropdown(openDropdown === blog.id ? null : blog.id)}
-                      className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDropdown(openDropdown === blog.id ? null : blog.id);
+                      }}
+                      className="inline-flex items-center p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
                     
                     {openDropdown === blog.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/20 z-50">
                         <div className="py-1">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               onEdit(blog);
                               setOpenDropdown(null);
                             }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               onTogglePublish(blog);
                               setOpenDropdown(null);
                             }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             {blog.published ? 'Unpublish' : 'Publish'}
                           </button>
-                          <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
                             <ExternalLink className="w-4 h-4 mr-2" />
                             View Post
                           </button>
-                          <div className="border-t border-gray-100 my-1"></div>
+                          <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                           <button 
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               onDelete(blog);
                               setOpenDropdown(null);
                             }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete

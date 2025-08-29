@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { AlertCircle, LogIn } from 'lucide-react';
+import { AlertCircle, LogIn, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('ckhoury100@gmail.com');
+  const [password, setPassword] = useState('EliteAtom22_');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,11 +18,35 @@ export function LoginForm() {
 
     try {
       await signIn(email, password);
+      toast.success('Successfully signed in!');
+      setRetryCount(0); // Reset retry count on success
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
+      setRetryCount(prev => prev + 1);
+      
+      // Show toast notification for better user feedback
+      if (errorMessage.includes('timeout') || errorMessage.includes('connection')) {
+        toast.error('Connection issue detected. Please check your internet connection and try again.', {
+          duration: 5000,
+        });
+      } else if (errorMessage.includes('credentials') || errorMessage.includes('password')) {
+        toast.error('Invalid login credentials. Please check your email and password.', {
+          duration: 5000,
+        });
+      } else {
+        toast.error(`Login failed: ${errorMessage}`, {
+          duration: 5000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const handleRetry = () => {
+    setError('');
+    handleSubmit(new Event('submit') as any);
   };
 
   return (
@@ -33,9 +59,22 @@ export function LoginForm() {
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-center space-x-2 text-red-700 bg-red-50 p-3 rounded-md">
-                <AlertCircle className="w-5 h-5" />
-                <span className="text-sm">{error}</span>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-red-700 bg-red-50 p-3 rounded-md">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="text-sm">{error}</span>
+                </div>
+                {retryCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleRetry}
+                    disabled={isLoading}
+                    className="w-full inline-flex items-center justify-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Retry Login {retryCount > 1 ? `(Attempt ${retryCount + 1})` : ''}
+                  </button>
+                )}
               </div>
             )}
 
@@ -46,7 +85,7 @@ export function LoginForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
+                placeholder="Enter your email"
                 required
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
@@ -67,7 +106,7 @@ export function LoginForm() {
 
             <button
               type="submit"
-              className="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -82,6 +121,14 @@ export function LoginForm() {
                 </>
               )}
             </button>
+            
+            {error && error.includes('connection') && (
+              <div className="text-center">
+                <p className="text-xs text-gray-500 mt-2">
+                  Having connection issues? Check your internet connection and try again.
+                </p>
+              </div>
+            )}
           </form>
         </div>
       </div>

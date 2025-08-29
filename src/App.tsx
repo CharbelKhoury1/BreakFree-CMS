@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { LoginForm } from './components/Auth/LoginForm';
@@ -8,6 +10,13 @@ import { BlogList } from './pages/BlogList';
 import { BlogCreate } from './pages/BlogCreate';
 import { BlogEdit } from './pages/BlogEdit';
 import { Settings } from './pages/Settings';
+import { Admin } from './pages/Admin';
+import { SystemMonitoringPage } from './pages/admin/SystemMonitoringPage';
+import { UserManagementPage } from './pages/admin/UserManagementPage';
+import { SecuritySettingsPage } from './pages/admin/SecuritySettingsPage';
+import { BackupExportPage } from './pages/admin/BackupExportPage';
+import { ActivityLogsPage } from './pages/admin/ActivityLogsPage';
+import { QuickActionsPage } from './pages/admin/QuickActionsPage';
 
 // Debug: Check environment variables
 console.log('App.tsx - Environment variables check:', {
@@ -42,39 +51,78 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/blogs" element={
-            <ProtectedRoute>
-              <BlogList />
-            </ProtectedRoute>
-          } />
-          <Route path="/blogs/new" element={
-            <ProtectedRoute>
-              <BlogCreate />
-            </ProtectedRoute>
-          } />
-          <Route path="/blogs/edit/:id" element={
-            <ProtectedRoute>
-              <BlogEdit />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
-    </AuthProvider>
-  );
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* TEMPORARY: Login route disabled for development */}
+            {/* <Route path="/login" element={<LoginForm />} /> */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/blogs" element={
+              <ProtectedRoute>
+                <BlogList />
+              </ProtectedRoute>
+            } />
+            <Route path="/blogs/new" element={
+              <ProtectedRoute>
+                <BlogCreate />
+              </ProtectedRoute>
+            } />
+            <Route path="/blogs/edit/:id" element={
+              <ProtectedRoute>
+                <BlogEdit />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/monitoring" element={
+              <ProtectedRoute>
+                <SystemMonitoringPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute>
+                <UserManagementPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/security" element={
+              <ProtectedRoute>
+                <SecuritySettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/backup" element={
+              <ProtectedRoute>
+                <BackupExportPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/logs" element={
+              <ProtectedRoute>
+                <ActivityLogsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/actions" element={
+              <ProtectedRoute>
+                <QuickActionsPage />
+              </ProtectedRoute>
+            } />
+          </Routes>
+          <Toaster position="top-right" richColors />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
+   );
 }
 
 export default App;

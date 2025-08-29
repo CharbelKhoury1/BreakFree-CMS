@@ -83,8 +83,8 @@ export function BlogList() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
-            <p className="text-gray-600">Manage your blog content</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Blog Posts</h1>
+            <p className="text-gray-600 dark:text-gray-300">Manage your blog content</p>
           </div>
           <Link to="/blogs/new">
             <button className="inline-flex items-center space-x-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
@@ -115,7 +115,7 @@ export function BlogList() {
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => handlePageChange(Math.max(1, blogs.page - 1))}
-              className={`px-3 py-1 border rounded ${blogs.page <= 1 ? 'pointer-events-none opacity-50' : ''}`}
+              className={`px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 ${blogs.page <= 1 ? 'pointer-events-none opacity-50' : ''}`}
             >
               Prev
             </button>
@@ -126,7 +126,7 @@ export function BlogList() {
                 <button
                   key={page}
                   onClick={() => handlePageChange(page)}
-                  className={`px-3 py-1 border rounded ${isActive ? 'bg-gray-900 text-white' : ''}`}
+                  className={`px-3 py-1 border border-gray-300 dark:border-gray-600 rounded ${isActive ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 >
                   {page}
                 </button>
@@ -134,7 +134,7 @@ export function BlogList() {
             })}
             <button
               onClick={() => handlePageChange(Math.min(blogs.totalPages, blogs.page + 1))}
-              className={`px-3 py-1 border rounded ${blogs.page >= blogs.totalPages ? 'pointer-events-none opacity-50' : ''}`}
+              className={`px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 ${blogs.page >= blogs.totalPages ? 'pointer-events-none opacity-50' : ''}`}
             >
               Next
             </button>
@@ -144,15 +144,15 @@ export function BlogList() {
         {/* Simple Delete Confirmation */}
         {blogToDelete && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow max-w-sm w-full p-6 space-y-4">
-              <h3 className="text-lg font-semibold">Delete Blog Post</h3>
-              <p className="text-sm text-gray-600">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20 max-w-sm w-full p-6 space-y-4 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Blog Post</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Are you sure you want to delete "{blogToDelete.title}"? This action cannot be undone.
               </p>
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setBlogToDelete(null)}
-                  className="px-4 py-2 text-sm border rounded hover:bg-gray-50"
+                  className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>
