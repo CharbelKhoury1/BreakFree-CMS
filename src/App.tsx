@@ -9,6 +9,14 @@ import { BlogCreate } from './pages/BlogCreate';
 import { BlogEdit } from './pages/BlogEdit';
 import { Settings } from './pages/Settings';
 
+// Debug: Check environment variables
+console.log('App.tsx - Environment variables check:', {
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
+  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
+  NODE_ENV: import.meta.env.MODE,
+  DEV: import.meta.env.DEV
+});
+
 function App() {
   // Check if Supabase is configured
   const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
