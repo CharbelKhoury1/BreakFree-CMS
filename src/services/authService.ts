@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { Profile, AuthResponse, ProfileUpdate } from '../types/auth';
+import type { Database } from '../types/database';
 
 export class AuthService {
   async signIn(email: string, password: string): Promise<AuthResponse> {
@@ -42,10 +43,10 @@ export class AuthService {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .single() as { data: Database['public']['Tables']['profiles']['Row'] | null, error: any };
 
     if (error) throw error;
-    return data;
+    return data as Profile;
   }
 
   async updateProfile(userId: string, updates: ProfileUpdate): Promise<Profile> {
@@ -57,10 +58,10 @@ export class AuthService {
       })
       .eq('id', userId)
       .select()
-      .single();
+      .single() as { data: Database['public']['Tables']['profiles']['Row'] | null, error: any };
 
     if (error) throw error;
-    return data;
+    return data as Profile;
   }
 
   async isAdmin(userId: string): Promise<boolean> {
@@ -69,12 +70,28 @@ export class AuthService {
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .single() as { data: Database['public']['Tables']['profiles']['Row'] | null, error: any };
 
-      if (error) return false;
+      if (error || !data) return false;
       return data.role === 'admin';
     } catch {
       return false;
+    }
+  }
+
+  async getAdminUsers(): Promise<Profile[]> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'admin')
+        .order('created_at', { ascending: false }) as { data: Database['public']['Tables']['profiles']['Row'][] | null, error: any };
+
+      if (error) throw error;
+      return (data || []) as Profile[];
+    } catch (error) {
+      console.error('Error fetching admin users:', error);
+      throw error;
     }
   }
 }

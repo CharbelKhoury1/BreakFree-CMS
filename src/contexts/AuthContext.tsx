@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error loading profile:', error);
       setProfile(null);
+      // If profile loading fails, sign out the user
+      await authService.signOut();
     } finally {
       setLoading(false);
     }
@@ -69,8 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.error) {
         throw response.error;
       }
-    } finally {
+      // Don't set loading to false here - let the auth state change handle it
+    } catch (error) {
+      // Only set loading to false on error, successful auth will be handled by onAuthStateChange
       setLoading(false);
+      throw error;
     }
   };
 
