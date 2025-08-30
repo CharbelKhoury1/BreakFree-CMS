@@ -149,6 +149,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('🔄 AuthContext: Initializing authentication', { retriesLeft: retries });
         
+        // First, check if we have valid session data in localStorage
+        const storedUser = sessionStorage.getUser();
+        const storedProfile = sessionStorage.getProfile();
+        
+        if (storedUser && storedProfile) {
+          console.log('🔄 AuthContext: Found stored session data, restoring from localStorage');
+          setUser(storedUser);
+          setProfile(storedProfile);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔄 AuthContext: No stored session found, checking Supabase session');
+        
         const sessionPromise = supabase.auth.getSession();
         const { data: { session } } = await withTimeout(
           sessionPromise,
