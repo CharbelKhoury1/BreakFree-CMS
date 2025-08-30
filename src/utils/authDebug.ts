@@ -109,11 +109,11 @@ export async function logAuthDebugInfo(): Promise<void> {
 }
 
 /**
- * Test admin user creation
+ * Test user creation
  */
-export async function testAdminUserCreation(email: string): Promise<boolean> {
+export async function testUserCreation(email: string = 'user@example.com'): Promise<boolean> {
   try {
-    console.log('🧪 Testing admin user creation for:', email);
+    console.log('🧪 Testing user creation for:', email);
     
     // Check if user exists in auth
     const { data: users, error: listError } = await supabase.auth.admin.listUsers();
@@ -140,12 +140,12 @@ export async function testAdminUserCreation(email: string): Promise<boolean> {
       }
       
       console.log('Profile found:', profile);
-      return profile.role === 'admin';
+      return profile.role === 'user' || profile.role === 'admin'; // Accept any valid role
     }
     
     return false;
   } catch (error) {
-    console.error('Admin user test failed:', error);
+    console.error('User test failed:', error);
     return false;
   }
 }

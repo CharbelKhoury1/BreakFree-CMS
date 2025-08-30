@@ -11,7 +11,8 @@ import {
   Zap,
   ArrowRight,
   TrendingUp,
-  CheckCircle
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -125,6 +126,19 @@ export function Admin() {
         label: 'Actions Today',
         value: '12',
         trend: 'down'
+      },
+      status: 'healthy'
+    },
+    {
+      id: 'access-verifier',
+      title: 'Access Verifier',
+      icon: AlertCircle,
+      description: 'Diagnose and verify admin permissions',
+      route: '/admin/access-verifier',
+      stats: {
+        label: 'Last Check',
+        value: 'Never',
+        trend: 'stable'
       },
       status: 'healthy'
     }

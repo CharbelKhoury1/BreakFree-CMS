@@ -31,12 +31,12 @@ The project includes migration files that will create the necessary database str
 - Row Level Security (RLS) policies
 - Database functions for view counting
 
-### 3. Admin User Creation
+### 3. User Account Creation
 
 1. Go to your Supabase project dashboard
-2. Navigate to Authentication > Users
-3. Create a new user with email: `admin@breakfree.com`
-4. Run the admin user migration to assign admin role
+2. Navigate to Authentication → Users
+3. Create a new user account with your desired email
+4. Set up the user profile in the database
 
 ### 4. Start Development
 
@@ -105,7 +105,7 @@ supabase/
 
 1. Ensure all environment variables are set correctly
 2. Run database migrations in your production Supabase project
-3. Create admin users through the Supabase dashboard
+3. Create user accounts through the Supabase dashboard
 4. Deploy using your preferred hosting provider
 
 ## API Documentation
@@ -118,7 +118,7 @@ supabase/
 - `uploadImage()`: Handle image uploads to Supabase Storage
 
 ### AuthService
-- `signIn()`: Authenticate admin users
+- `signIn()`: Authenticate users
 - `signOut()`: Handle logout
 - `getUserProfile()`: Fetch user profile data
 - `updateProfile()`: Update user information

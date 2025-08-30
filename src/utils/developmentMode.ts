@@ -1,7 +1,7 @@
 // Development mode utilities
 // This file helps manage development bypass functionality
 
-export const DEVELOPMENT_BYPASS = true; // Set to false to enable real authentication
+export const DEVELOPMENT_BYPASS = false; // Set to false to enable real authentication
 
 /**
  * Check if development bypass is enabled
@@ -39,53 +39,65 @@ export const withDevelopmentFallback = async <T>(
 };
 
 /**
- * Mock data for development mode
+ * Generate a valid UUID v4 for development mode
  */
-export const mockData = {
-  user: {
-    id: 'temp-user-id',
-    email: 'admin@breakfree.com',
-    role: 'admin'
-  },
-  profile: {
-    id: 'temp-user-id',
-    email: 'admin@breakfree.com',
-    full_name: 'Admin User',
-    role: 'admin',
-    bio: 'System Administrator',
-    avatar_url: '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+/**
+ * Generate dynamic mock data for development mode
+ */
+export const createMockData = (email?: string, fullName?: string) => {
+  // Provide default email if none is provided
+  const defaultEmail = email || 'user@example.com';
+  
+  // Add null check before calling split
+  const userName = defaultEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  
+  // Use provided full_name if available, otherwise generate from email
+  const displayName = fullName || `${userName} (User)`;
+  
+  // Generate consistent UUIDs for development mode
+  const userId = generateUUID();
+  const blogId = generateUUID();
+  
+  return {
+    user: {
+      id: userId,
+      email: defaultEmail,
+      role: 'user'
+    },
+    profile: {
+      id: userId,
+      email: defaultEmail,
+      full_name: displayName,
+      role: 'user',
+      bio: 'System User',
+      avatar_url: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
   blogs: {
-    data: [
-      {
-        id: '1',
-        title: 'Welcome to BreakFree CMS',
-        content: 'This is a sample blog post in development mode.',
-        excerpt: 'Sample blog post for development.',
-        published: true,
-        featured_image: '',
-        tags: ['welcome', 'cms'],
-        view_count: 42,
-        author_id: 'temp-user-id',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        author: {
-          id: 'temp-user-id',
-          full_name: 'Admin User',
-          email: 'admin@breakfree.com'
-        }
-      }
-    ],
-    total: 1,
+    data: [],
+    total: 0,
     page: 1,
     limit: 10,
-    totalPages: 1
+    totalPages: 0
   },
   stats: {
-    totalBlogs: 1,
-    publishedBlogs: 1,
-    totalViews: 42
+    totalBlogs: 0,
+    publishedBlogs: 0,
+    totalViews: 0
   }
+  };
 };
+
+/**
+ * Legacy mock data for backward compatibility
+ */
+export const mockData = createMockData('user@example.com');

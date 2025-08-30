@@ -41,78 +41,96 @@ export class BlogService {
   async updateBlog(id: string, updates: UpdateBlogInput): Promise<Blog> {
     console.log('BlogService.updateBlog called with:', { id, updates });
     
-    // Check authentication first
-    const currentUser = await supabase.auth.getUser();
-    console.log('Current user:', currentUser.data.user?.id);
-    
-    if (!currentUser.data.user) {
-      console.error('No authenticated user found');
-      throw new Error('Authentication required');
-    }
+    return withDevelopmentFallback(
+      async () => {
+        // Check authentication first
+        const currentUser = await supabase.auth.getUser();
+        console.log('Current user:', currentUser.data.user?.id);
+        
+        if (!currentUser.data.user) {
+          console.error('No authenticated user found');
+          throw new Error('Authentication required');
+        }
 
-    const updateData: any = { 
-      ...updates, 
-      updated_at: new Date().toISOString() 
-    };
+        const updateData: any = { 
+          ...updates, 
+          updated_at: new Date().toISOString() 
+        };
 
-    // Generate excerpt if content changed but no excerpt provided
-    if (updates.content && !updates.excerpt) {
-      updateData.excerpt = this.generateExcerpt(updates.content);
-    }
+        // Generate excerpt if content changed but no excerpt provided
+        if (updates.content && !updates.excerpt) {
+          updateData.excerpt = this.generateExcerpt(updates.content);
+        }
 
-    console.log('Update data being sent to Supabase:', updateData);
+        console.log('Update data being sent to Supabase:', updateData);
 
-    const { data, error } = await supabase
-      .from('blogs')
-      .update(updateData)
-      .eq('id', id)
-      .select(`
-        *,
-        author:profiles!blogs_author_id_fkey(id, full_name, email)
-      `)
-      .single();
+        const { data, error } = await supabase
+          .from('blogs')
+          .update(updateData)
+          .eq('id', id)
+          .select(`
+            *,
+            author:profiles!blogs_author_id_fkey(id, full_name, email)
+          `)
+          .single();
 
-    console.log('Supabase response:', { data, error });
+        console.log('Supabase response:', { data, error });
 
-    if (error) {
-      console.error('Supabase error details:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
-    
-    if (!data) {
-      console.error('No data returned from update operation');
-      throw new Error('No data returned from update operation');
-    }
-    
-    console.log('Update successful, returning data:', data);
-    return data;
+        if (error) {
+          console.error('Supabase error details:', error);
+          throw new Error(`Database error: ${error.message}`);
+        }
+        
+        if (!data) {
+          console.error('No data returned from update operation');
+          throw new Error('No data returned from update operation');
+        }
+        
+        console.log('Update successful, returning data:', data);
+        return data;
+      },
+      // Return a mock updated blog for development mode
+      {
+        ...mockData.blogs.data[0],
+        ...updates,
+        id,
+        updated_at: new Date().toISOString()
+      } as Blog,
+      'updateBlog'
+    );
   }
 
   async deleteBlog(id: string): Promise<void> {
     console.log('BlogService.deleteBlog called with id:', id);
     
-    // Check authentication first
-    const currentUser = await supabase.auth.getUser();
-    console.log('Current user for delete:', currentUser.data.user?.id);
-    
-    if (!currentUser.data.user) {
-      console.error('No authenticated user found for delete');
-      throw new Error('Authentication required');
-    }
+    return withDevelopmentFallback(
+      async () => {
+        // Check authentication first
+        const currentUser = await supabase.auth.getUser();
+        console.log('Current user for delete:', currentUser.data.user?.id);
+        
+        if (!currentUser.data.user) {
+          console.error('No authenticated user found for delete');
+          throw new Error('Authentication required');
+        }
 
-    const { error } = await supabase
-      .from('blogs')
-      .delete()
-      .eq('id', id);
+        const { error } = await supabase
+          .from('blogs')
+          .delete()
+          .eq('id', id);
 
-    console.log('Delete operation result:', { error });
+        console.log('Delete operation result:', { error });
 
-    if (error) {
-      console.error('Delete error details:', error);
-      throw new Error(`Delete failed: ${error.message}`);
-    }
-    
-    console.log('Delete successful for blog id:', id);
+        if (error) {
+          console.error('Delete error details:', error);
+          throw new Error(`Delete failed: ${error.message}`);
+        }
+        
+        console.log('Delete successful for blog id:', id);
+      },
+      undefined, // Return undefined for successful delete in development mode
+      'deleteBlog'
+    );
   }
 
   async getBlogById(id: string, incrementViews = false): Promise<Blog> {

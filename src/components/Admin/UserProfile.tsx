@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, Camera, Save, X, Eye, EyeOff, Bell, Mail, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface UserProfileData {
   id?: string;
@@ -23,6 +24,7 @@ interface PasswordData {
 }
 
 export function UserProfile() {
+  const { profile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -97,26 +99,37 @@ export function UserProfile() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Load profile data from Supabase
+  // Load profile data from AuthContext or Supabase
   useEffect(() => {
     const loadProfile = async () => {
       try {
         setLoading(true);
         
-        // Use mock data for development mode
-        const mockProfile = {
-          full_name: 'Admin User',
-          email: 'admin@breakfree.com',
-          bio: 'System Administrator with full access to BreakFree CMS',
-          avatar_url: '',
-          role: 'admin',
-          notifications: {
-            email: true,
-            push: false
-          }
-        };
-        setProfileData(mockProfile);
-        setEditData(mockProfile);
+        // Use profile data from AuthContext if available
+        if (profile) {
+          const profileWithNotifications = {
+            ...profile,
+            notifications: {
+              email: true,
+              push: false
+            }
+          };
+          setProfileData(profileWithNotifications);
+          setEditData(profileWithNotifications);
+        } else {
+          // Fallback to default mock data if no profile in context
+          const { createMockData } = await import('../../utils/developmentMode');
+          const mockData = createMockData('user@example.com');
+          const mockProfile = {
+            ...mockData.profile,
+            notifications: {
+              email: true,
+              push: false
+            }
+          };
+          setProfileData(mockProfile);
+          setEditData(mockProfile);
+        }
       } catch (error) {
         console.error('Error loading profile:', error);
         toast.error('Failed to load profile data');
@@ -126,7 +139,7 @@ export function UserProfile() {
     };
 
     loadProfile();
-  }, []);
+  }, [profile]);
 
   const handleSaveProfile = async () => {
     if (!validateProfile()) return;

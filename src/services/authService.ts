@@ -61,7 +61,7 @@ export class AuthService {
         }
         
         if (error.message?.includes('User not found')) {
-          throw new AuthenticationError('No account found with this email address. Please check your email or contact your administrator.');
+          throw new AuthenticationError('No account found with this email address. Please check your email or create an account.');
         }
         
         throw new AuthenticationError(error.message || 'Authentication failed. Please try again.');
@@ -188,50 +188,19 @@ export class AuthService {
     return data as Profile;
   }
 
-  async isAdmin(userId: string): Promise<boolean> {
-    console.log('👤 AuthService.isAdmin: Checking admin status for user', { userId });
-    
-    try {
-      console.log('👤 AuthService.isAdmin: Querying profiles table');
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single() as { data: Database['public']['Tables']['profiles']['Row'] | null, error: any };
-
-      console.log('👤 AuthService.isAdmin: Profile query result', { 
-        hasData: !!data, 
-        hasError: !!error, 
-        errorMessage: error?.message,
-        role: data?.role 
-      });
-
-      if (error || !data) {
-        console.warn('👤 AuthService.isAdmin: No profile found or error occurred', { error });
-        return false;
-      }
-      
-      const isAdmin = data.role === 'admin';
-      console.log('👤 AuthService.isAdmin: Final result', { isAdmin, role: data.role });
-      return isAdmin;
-    } catch (error) {
-      console.error('👤 AuthService.isAdmin: Exception occurred', error);
-      return false;
-    }
-  }
-
-  async getAdminUsers(): Promise<Profile[]> {
+  // Admin-specific methods removed - system now supports all authenticated users
+  
+  async getAllUsers(): Promise<Profile[]> {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'admin')
-        .order('created_at', { ascending: false }) as { data: Database['public']['Tables']['profiles']['Row'][] | null, error: any };
+         .from('profiles')
+         .select('*')
+         .order('created_at', { ascending: false }) as { data: Database['public']['Tables']['profiles']['Row'][] | null, error: any };
 
       if (error) throw error;
       return (data || []) as Profile[];
     } catch (error) {
-      console.error('Error fetching admin users:', error);
+      console.error('Error fetching users:', error);
       throw error;
     }
   }

@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
+import { AuthGuard } from './components/Auth/AuthGuard';
 import { LoginForm } from './components/Auth/LoginForm';
 import { Dashboard } from './pages/Dashboard';
 import { BlogList } from './pages/BlogList';
@@ -17,6 +18,7 @@ import { SecuritySettingsPage } from './pages/admin/SecuritySettingsPage';
 import { BackupExportPage } from './pages/admin/BackupExportPage';
 import { ActivityLogsPage } from './pages/admin/ActivityLogsPage';
 import { QuickActionsPage } from './pages/admin/QuickActionsPage';
+import { AdminAccessVerifier } from './components/Admin/AdminAccessVerifier';
 
 // Debug: Check environment variables
 console.log('App.tsx - Environment variables check:', {
@@ -57,6 +59,11 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route path="/" element={
+              <AuthGuard>
+                <Navigate to="/dashboard" replace />
+              </AuthGuard>
+            } />
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
@@ -114,6 +121,11 @@ function App() {
             <Route path="/admin/actions" element={
               <ProtectedRoute>
                 <QuickActionsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/access-verifier" element={
+              <ProtectedRoute>
+                <AdminAccessVerifier />
               </ProtectedRoute>
             } />
             {/* Default route - redirect to login for unmatched paths */}

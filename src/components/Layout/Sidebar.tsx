@@ -22,7 +22,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { signOut, profile } = useAuth();
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Blog Posts', href: '/blogs', icon: FileText },
     { name: 'New Post', href: '/blogs/new', icon: PenTool },
     { name: 'Settings', href: '/settings', icon: Settings },
@@ -34,11 +34,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleSignOut = () => {
-    // Add confirmation for sign out
-    if (window.confirm('Are you sure you want to sign out?')) {
-      console.log('🔑 Sidebar: User confirmed sign out');
-      signOut();
-    }
+    console.log('🔑 Sidebar: User signing out');
+    signOut();
     onClose();
   };
 
@@ -123,7 +120,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <User className="w-4 h-4 text-gray-400" style={{display: profile?.avatar_url ? 'none' : 'block'}} />
               </div>
               <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{profile?.full_name || 'Admin User'}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{profile?.full_name || 'User'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{profile?.role || 'Dashboard Access'}</p>
               </div>
             </div>

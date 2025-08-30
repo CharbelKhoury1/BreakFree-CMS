@@ -73,7 +73,9 @@ export function LoginForm() {
     try {
       console.log('🔑 LoginForm: Attempting sign in with email:', email);
       await signIn(email, password);
-      toast.success('Successfully signed in!');
+      // Don't show success toast immediately - let AuthContext handle the full authentication flow
+      // The success will be evident when user is redirected to dashboard
+      console.log('🔑 LoginForm: Sign in completed, navigating to dashboard');
       navigate('/'); // Redirect to dashboard after successful login
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
@@ -89,8 +91,8 @@ export function LoginForm() {
         toast.error('Invalid login credentials. Please check your email and password.', {
           duration: 5000,
         });
-      } else if (errorMessage.includes('admin')) {
-        toast.error('Access denied. Admin privileges required.', {
+      } else if (errorMessage.includes('access')) {
+        toast.error('Access denied. Please check your credentials.', {
           duration: 5000,
         });
       } else {
@@ -115,7 +117,7 @@ export function LoginForm() {
       <div className="w-full max-w-md bg-white shadow rounded-lg">
         <div className="p-6 text-center border-b">
           <h1 className="text-2xl font-bold">BreakFree CMS</h1>
-          <p className="text-sm text-gray-600">Sign in to access the admin dashboard</p>
+          <p className="text-sm text-gray-600">Sign in to access the dashboard</p>
           
           {/* Connection Status Indicator */}
           <div className="mt-2">
@@ -211,21 +213,7 @@ export function LoginForm() {
               )}
             </button>
             
-            {/* Admin User Creation Helper */}
-            {connectionStatus === 'connected' && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">First Time Setup?</h4>
-                <p className="text-xs text-blue-700 mb-2">
-                  If you haven't created an admin user yet:
-                </p>
-                <ol className="text-xs text-blue-600 space-y-1">
-                  <li>1. Go to your Supabase project dashboard</li>
-                  <li>2. Navigate to Authentication → Users</li>
-                  <li>3. Create a new user with admin email</li>
-                  <li>4. Run the admin user migration</li>
-                </ol>
-              </div>
-            )}
+
             {error && error.includes('connection') && (
               <div className="text-center">
                 <p className="text-xs text-gray-500 mt-2">
@@ -234,19 +222,24 @@ export function LoginForm() {
               </div>
             )}
             
+            {error && error.includes('permissions') && (
+              <div className="text-center">
+                <p className="text-xs text-gray-500 mt-2">
+                  Having permission issues? Try the{' '}
+                  <button
+                    onClick={() => navigate('/admin/access-verifier')}
+                    className="text-indigo-600 hover:text-indigo-700 underline"
+                  >
+                    Admin Access Verifier
+                  </button>
+                  {' '}for detailed diagnostics.
+                </p>
+              </div>
+            )}
+            
             {/* Development Fallback Button */}
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={async () => {
-                  await logAuthDebugInfo();
-                  toast.info('Debug information logged to console');
-                }}
-                className="w-full inline-flex items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors mb-2"
-              >
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Debug Authentication
-              </button>
+
               <button
                 type="button"
                 onClick={handleFallbackAccess}

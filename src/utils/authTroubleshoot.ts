@@ -67,39 +67,38 @@ export async function troubleshootAuth(): Promise<TroubleshootResult[]> {
       });
     }
     
-    // 4. Check for admin users
+    // 4. Check for users
     try {
-      const { data: adminUsers, error } = await supabase
+      const { data: users, error: usersError } = await supabase
         .from('profiles')
-        .select('email, role')
-        .eq('role', 'admin');
-      
-      if (error) {
+        .select('*');
+
+      if (usersError) {
         results.push({
-          issue: 'Admin Users',
+          issue: 'Users',
           status: 'fail',
-          message: `Cannot check admin users: ${error.message}`,
-          solution: 'Verify RLS policies allow reading profiles table'
+          message: `Cannot check users: ${usersError.message}`,
+          solution: 'Check database connection and table permissions'
         });
       } else {
-        const adminCount = adminUsers?.length || 0;
+        const userCount = users?.length || 0;
         results.push({
-          issue: 'Admin Users',
-          status: adminCount > 0 ? 'pass' : 'warning',
-          message: adminCount > 0 
-            ? `Found ${adminCount} admin user(s): ${adminUsers.map(u => u.email).join(', ')}`
-            : 'No admin users found',
-          solution: adminCount === 0 
-            ? 'Create an admin user in Supabase Auth dashboard and run the admin user migration'
+          issue: 'Users',
+          status: userCount > 0 ? 'pass' : 'warning',
+          message: userCount > 0 
+            ? `Found ${userCount} user(s): ${users.map(u => u.email).join(', ')}`
+            : 'No users found',
+          solution: userCount === 0 
+            ? 'Create a user in Supabase Auth dashboard and set up the user profile'
             : undefined
         });
       }
     } catch (error) {
       results.push({
-        issue: 'Admin Users',
+        issue: 'Users',
         status: 'fail',
-        message: 'Failed to check admin users',
-        solution: 'Verify database connection and RLS policies'
+        message: 'Failed to check users',
+        solution: 'Check database connection and permissions'
       });
     }
     
@@ -111,7 +110,7 @@ export async function troubleshootAuth(): Promise<TroubleshootResult[]> {
       message: debugInfo.sessionExists 
         ? `Active session found (Role: ${debugInfo.userRole || 'unknown'})`
         : 'No active session',
-      solution: !debugInfo.sessionExists ? 'Sign in with valid admin credentials' : undefined
+      solution: !debugInfo.sessionExists ? 'Sign in with valid credentials' : undefined
     });
     
   } catch (error) {

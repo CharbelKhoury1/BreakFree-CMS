@@ -1,9 +1,72 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, getConnectionStatus, testSupabaseConnection } from '../lib/supabase';
+import { supabase, getConnectionStatus, testSupabaseConnection, retryOperation } from '../lib/supabase';
 import { AuthService } from '../services/authService';
 import type { Profile } from '../types/auth';
 import { withTimeout, ConnectionError, TimeoutError, AuthenticationError } from '../utils/timeout';
 import { isDevelopmentMode, mockData } from '../utils/developmentMode';
+
+// Session storage keys
+const SESSION_STORAGE_KEYS = {
+  USER: 'cms-user-session',
+  PROFILE: 'cms-profile-session',
+  EMAIL: 'cms-user-email'
+};
+
+// Session storage utilities
+const sessionStorage = {
+  setUser: (user: any) => {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEYS.USER, JSON.stringify(user));
+      if (user?.email) {
+        localStorage.setItem(SESSION_STORAGE_KEYS.EMAIL, user.email);
+      }
+    } catch (error) {
+      console.warn('Failed to store user session:', error);
+    }
+  },
+  setProfile: (profile: Profile) => {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+    } catch (error) {
+      console.warn('Failed to store profile session:', error);
+    }
+  },
+  getUser: () => {
+    try {
+      const stored = localStorage.getItem(SESSION_STORAGE_KEYS.USER);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.warn('Failed to retrieve user session:', error);
+      return null;
+    }
+  },
+  getProfile: () => {
+    try {
+      const stored = localStorage.getItem(SESSION_STORAGE_KEYS.PROFILE);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.warn('Failed to retrieve profile session:', error);
+      return null;
+    }
+  },
+  getEmail: () => {
+    try {
+      return localStorage.getItem(SESSION_STORAGE_KEYS.EMAIL);
+    } catch (error) {
+      console.warn('Failed to retrieve email session:', error);
+      return null;
+    }
+  },
+  clear: () => {
+    try {
+      Object.values(SESSION_STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+      });
+    } catch (error) {
+      console.warn('Failed to clear session storage:', error);
+    }
+  }
+};
 
 interface AuthContextType {
   user: any | null;
@@ -11,7 +74,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
+  // isAdmin property removed - all authenticated users have access
   connectionStatus: { auth: boolean; database: boolean; lastChecked: number };
   testConnection: () => Promise<void>;
 }
@@ -21,12 +84,57 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const authService = new AuthService();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(isDevelopmentMode() ? mockData.user : null);
-  const [profile, setProfile] = useState<Profile | null>(isDevelopmentMode() ? mockData.profile : null);
+  // Initialize state from stored session data or development mode
+  const getInitialUser = () => {
+    if (isDevelopmentMode()) {
+      const storedEmail = sessionStorage.getEmail();
+      if (storedEmail) {
+        // Use stored email for development mode
+        const { createMockData } = require('../utils/developmentMode');
+        return createMockData(storedEmail).user;
+      }
+      return mockData.user;
+    }
+    return sessionStorage.getUser();
+  };
+
+  const getInitialProfile = () => {
+    if (isDevelopmentMode()) {
+      const storedEmail = sessionStorage.getEmail();
+      if (storedEmail) {
+        // Use stored email for development mode
+        const { createMockData } = require('../utils/developmentMode');
+        return createMockData(storedEmail).profile;
+      }
+      return mockData.profile;
+    }
+    return sessionStorage.getProfile();
+  };
+
+  const [user, setUser] = useState<any | null>(getInitialUser());
+  const [profile, setProfile] = useState<Profile | null>(getInitialProfile());
   const [loading, setLoading] = useState(isDevelopmentMode() ? false : true);
   const [connectionStatus, setConnectionStatus] = useState(getConnectionStatus());
 
-  const isAdmin = profile?.role === 'admin'; // Check actual user role
+  // User role check removed - allow all authenticated users
+
+  // Enhanced setUser function that persists to storage
+  const setUserWithPersistence = (newUser: any | null) => {
+    setUser(newUser);
+    if (newUser) {
+      sessionStorage.setUser(newUser);
+    } else {
+      sessionStorage.clear();
+    }
+  };
+
+  // Enhanced setProfile function that persists to storage
+  const setProfileWithPersistence = (newProfile: Profile | null) => {
+    setProfile(newProfile);
+    if (newProfile) {
+      sessionStorage.setProfile(newProfile);
+    }
+  };
 
   useEffect(() => {
     // Skip real authentication if development bypass is enabled
@@ -50,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         console.log('🔄 AuthContext: Initial session loaded', { hasSession: !!session, hasUser: !!session?.user });
         
-        setUser(session?.user ?? null);
+        setUserWithPersistence(session?.user ?? null);
         if (session?.user) {
           await loadUserProfile(session.user.id);
         } else {
@@ -69,8 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('🔄 AuthContext: All retry attempts failed, continuing without auth');
         
         // Always ensure loading is set to false
-        setUser(null);
-        setProfile(null);
+        setUserWithPersistence(null);
+        setProfileWithPersistence(null);
         setLoading(false);
       }
     };
@@ -92,13 +200,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId: session?.user?.id 
         });
         
-        setUser(session?.user ?? null);
+        setUserWithPersistence(session?.user ?? null);
         if (session?.user) {
           console.log('🔄 AuthContext.onAuthStateChange: Loading user profile');
           await loadUserProfile(session.user.id);
         } else {
           console.log('🔄 AuthContext.onAuthStateChange: No session, clearing profile');
-          setProfile(null);
+          setProfileWithPersistence(null);
           setLoading(false);
         }
       }
@@ -110,11 +218,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserProfile = async (userId: string, retries: number = 2) => {
     console.log('👤 AuthContext.loadUserProfile: Loading profile for user', { userId, retriesLeft: retries });
     
-    // Skip real profile loading if development bypass is enabled
+    // In development mode, try to fetch real profile data first, then fall back to mock data
     if (isDevelopmentMode()) {
-      console.log('👤 AuthContext.loadUserProfile: Development bypass enabled, skipping real profile loading');
-      setLoading(false);
-      return;
+      console.log('👤 AuthContext.loadUserProfile: Development bypass enabled, attempting to fetch real profile data first');
+      
+      try {
+        // Try to fetch real profile data from database
+        console.log('👤 AuthContext.loadUserProfile: Attempting to fetch real profile from database');
+        const userProfile = await authService.getUserProfile(userId);
+        
+        console.log('👤 AuthContext.loadUserProfile: Real profile loaded successfully', { 
+          profileId: userProfile.id, 
+          email: userProfile.email, 
+          fullName: userProfile.full_name,
+          role: userProfile.role 
+        });
+        
+        setProfileWithPersistence(userProfile);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.warn('👤 AuthContext.loadUserProfile: Failed to fetch real profile, falling back to mock data', error);
+        
+        // Fall back to mock data if real profile fetch fails
+        const currentEmail = user?.email || 'user@example.com';
+        const { createMockData } = await import('../utils/developmentMode');
+        const mockData = createMockData(currentEmail);
+        
+        setProfileWithPersistence(mockData.profile as any);
+        setLoading(false);
+        return;
+      }
     }
     
     try {
@@ -127,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: userProfile.role 
       });
       
-      setProfile(userProfile);
+      setProfileWithPersistence(userProfile);
     } catch (error) {
       console.error('👤 AuthContext.loadUserProfile: Error loading profile', error);
       
@@ -144,12 +278,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (error instanceof ConnectionError || error instanceof TimeoutError) {
         console.warn('👤 AuthContext.loadUserProfile: All retries failed, continuing without profile');
         // Don't clear user session for connection errors, just clear profile
-        setProfile(null);
+        setProfileWithPersistence(null);
       } else {
         console.error('👤 AuthContext.loadUserProfile: Profile error, clearing session');
         // For other errors, clear both profile and user
-        setProfile(null);
-        setUser(null);
+        setProfileWithPersistence(null);
+        setUserWithPersistence(null);
       }
     } finally {
       console.log('👤 AuthContext.loadUserProfile: Setting loading to false');
@@ -163,7 +297,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Handle development bypass
     if (isDevelopmentMode()) {
-      console.log('🔑 AuthContext.signIn: Development bypass enabled, simulating successful login');
+      console.log('🔑 AuthContext.signIn: Development bypass enabled, attempting to fetch real profile for email:', email);
+      
+      try {
+        // Try to fetch real user profile by email from database
+        console.log('🔑 AuthContext.signIn: Attempting to fetch real profile from database by email');
+        const response = await authService.signIn(email, password);
+        
+        if (response.user && !response.error) {
+          console.log('🔑 AuthContext.signIn: Real authentication successful, loading profile');
+          const userProfile = await authService.getUserProfile(response.user.id);
+          
+          console.log('🔑 AuthContext.signIn: Real profile loaded', { 
+            fullName: userProfile.full_name,
+            email: userProfile.email,
+            role: userProfile.role 
+          });
+          
+          setUser(response.user as any);
+          setProfile(userProfile);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn('🔑 AuthContext.signIn: Real authentication failed, falling back to mock data', error);
+      }
+      
+      // Fall back to mock data if real authentication fails
+      console.log('🔑 AuthContext.signIn: Using mock data for development bypass');
+      const { createMockData } = await import('../utils/developmentMode');
+      const mockData = createMockData(email);
+      
+      // Set the user and profile with the entered email
+      setUserWithPersistence(mockData.user as any);
+      setProfileWithPersistence(mockData.profile as any);
+      sessionStorage.setEmail(email); // Store email for session persistence
       setLoading(false);
       return;
     }
@@ -199,7 +367,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Authentication failed - no user data received');
       }
       
-      // Check if user has admin role after successful authentication
+      // Check if user has valid role after successful authentication
       if (response.user) {
         console.log('🔑 AuthContext.signIn: Checking user role');
         try {
@@ -211,26 +379,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
           console.log('🔑 AuthContext.signIn: User profile loaded', { role: userProfile.role });
           
-          if (userProfile.role !== 'admin') {
-            console.warn('🔑 AuthContext.signIn: Non-admin user attempted to access CMS', { 
-              email, 
-              role: userProfile.role 
-            });
-            
-            // Sign out the user immediately
-            try {
-              await authService.signOut();
-            } catch (signOutError) {
-              console.warn('🔑 AuthContext.signIn: Failed to sign out non-admin user:', signOutError);
-            }
-            setLoading(false);
-            
-            throw new Error('Access denied. This system is restricted to administrators only. Please contact your system administrator if you believe this is an error.');
-          }
+          // Allow any authenticated user to access the system
+          console.log('🔑 AuthContext.signIn: User authenticated successfully', { 
+            email, 
+            role: userProfile.role 
+          });
         } catch (profileError) {
           console.error('🔑 AuthContext.signIn: Error loading user profile for role check', profileError);
           
-          // If we can't load the profile, provide more specific error
+          // In development mode, be more lenient with profile errors
+          if (isDevelopmentMode()) {
+            console.warn('🔑 AuthContext.signIn: Development mode - profile error, but continuing with mock data');
+            // Use mock data if profile loading fails in development
+            const { createMockData } = await import('../utils/developmentMode');
+            const mockData = createMockData(email);
+            setUserWithPersistence(response.user as any);
+            setProfileWithPersistence(mockData.profile as any);
+            sessionStorage.setEmail(email); // Store email for session persistence
+            setLoading(false);
+            return;
+          }
+          
+          // If we can't load the profile in production, provide more specific error
           try {
             await authService.signOut();
           } catch (signOutError) {
@@ -239,14 +409,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
           
           if (profileError instanceof ConnectionError || profileError instanceof TimeoutError) {
+            console.error('🔑 AuthContext.signIn: Connection/Timeout error details:', profileError);
             throw new Error('Unable to connect to user profile service. Please check your internet connection and try again.');
           } else {
-            throw new Error('Unable to verify user permissions. Please ensure your account has been properly configured with admin access.');
+            console.error('🔑 AuthContext.signIn: Profile permission error details:', {
+              error: profileError,
+              message: profileError instanceof Error ? profileError.message : 'Unknown error',
+              userId: response.user?.id,
+              email: email
+            });
+            throw new Error(`Unable to verify user permissions: ${profileError instanceof Error ? profileError.message : 'Unknown error'}. Please check the Admin Access Verifier for detailed diagnostics.`);
           }
         }
       }
       
-      console.log('🔑 AuthContext.signIn: Admin user verified, proceeding with login');
+      console.log('🔑 AuthContext.signIn: User verified, proceeding with login');
       
       // Add a safety timeout to prevent infinite loading
       setTimeout(() => {
@@ -285,8 +462,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Clear authentication state immediately for better UX
       console.log('🔑 AuthContext.signOut: Clearing user and profile state');
-      setUser(null);
-      setProfile(null);
+      setUserWithPersistence(null);
+      setProfileWithPersistence(null);
       
       // Clear all localStorage and sessionStorage data
       console.log('🔑 AuthContext.signOut: Clearing localStorage data');
@@ -357,8 +534,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('🔑 AuthContext.signOut: Error during sign out:', error);
       
       // Even if there's an error, clear local state and navigate to login
-      setUser(null);
-      setProfile(null);
+      setUserWithPersistence(null);
+        setProfileWithPersistence(null);
       
       // Force reload to ensure clean state
       window.location.replace('/login');
@@ -386,7 +563,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       signIn,
       signOut,
-      isAdmin,
       connectionStatus,
       testConnection,
     }}>
