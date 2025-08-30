@@ -169,6 +169,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
+      // Validate input parameters
+      if (!email || !password) {
+        throw new Error('Email and password are required');
+      }
+      
+      if (!email.includes('@')) {
+        throw new Error('Please enter a valid email address');
+      }
+      
       console.log('🔑 AuthContext.signIn: Calling authService.signIn');
       const response = await authService.signIn(email, password);
       
@@ -184,11 +193,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw response.error;
       }
       
+      if (!response.user) {
+        console.error('🔑 AuthContext.signIn: No user data received');
+        setLoading(false);
+        throw new Error('Authentication failed - no user data received');
+      }
+      
       // Check if user has admin role after successful authentication
       if (response.user) {
         console.log('🔑 AuthContext.signIn: Checking user role');
         try {
-          const userProfile = await authService.getUserProfile(response.user.id);
+          // Add retry logic for profile loading
+          const userProfile = await retryOperation(
+            () => authService.getUserProfile(response.user.id),
+            3, // 3 retries
+            1000 // 1 second delay
+          );
           console.log('🔑 AuthContext.signIn: User profile loaded', { role: userProfile.role });
           
           if (userProfile.role !== 'admin') {
@@ -198,7 +218,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             
             // Sign out the user immediately
-            await authService.signOut();
+            try {
+              await authService.signOut();
+            } catch (signOutError) {
+              console.warn('🔑 AuthContext.signIn: Failed to sign out non-admin user:', signOutError);
+            }
             setLoading(false);
             
             throw new Error('Access denied. This system is restricted to administrators only. Please contact your system administrator if you believe this is an error.');
@@ -206,11 +230,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (profileError) {
           console.error('🔑 AuthContext.signIn: Error loading user profile for role check', profileError);
           
-          // If we can't load the profile, deny access for security
-          await authService.signOut();
+          // If we can't load the profile, provide more specific error
+          try {
+            await authService.signOut();
+          } catch (signOutError) {
+            console.warn('🔑 AuthContext.signIn: Failed to sign out after profile error:', signOutError);
+          }
           setLoading(false);
           
-          throw new Error('Unable to verify user permissions. Access denied for security reasons.');
+          if (profileError instanceof ConnectionError || profileError instanceof TimeoutError) {
+            throw new Error('Unable to connect to user profile service. Please check your internet connection and try again.');
+          } else {
+            throw new Error('Unable to verify user permissions. Please ensure your account has been properly configured with admin access.');
+          }
         }
       }
       
@@ -249,15 +281,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     console.log('🔑 AuthContext.signOut: Starting sign out process');
-    setLoading(true);
     
     try {
-      // Clear authentication state
+      // Clear authentication state immediately for better UX
       console.log('🔑 AuthContext.signOut: Clearing user and profile state');
       setUser(null);
       setProfile(null);
       
-      // Clear all localStorage data related to the CMS
+      // Clear all localStorage and sessionStorage data
       console.log('🔑 AuthContext.signOut: Clearing localStorage data');
       const keysToRemove = [
         'cms-general-settings',
@@ -265,7 +296,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         'cms-content-settings',
         'cms-seo-settings',
         'cms-settings-timestamp',
-        'cms-test-settings'
+        'cms-test-settings',
+        'supabase.auth.token',
+        'sb-' // Clear any Supabase auth tokens
       ];
       
       keysToRemove.forEach(key => {
@@ -274,6 +307,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log(`🔑 AuthContext.signOut: Removed ${key} from localStorage`);
         } catch (error) {
           console.warn(`🔑 AuthContext.signOut: Failed to remove ${key} from localStorage:`, error);
+        }
+      });
+      
+      // Clear all localStorage keys that start with 'sb-' (Supabase auth keys)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) {
+          try {
+            localStorage.removeItem(key);
+            console.log(`🔑 AuthContext.signOut: Removed Supabase key ${key}`);
+          } catch (error) {
+            console.warn(`🔑 AuthContext.signOut: Failed to remove ${key}:`, error);
+          }
         }
       });
       
@@ -291,12 +336,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // Sign out from Supabase
         console.log('🔑 AuthContext.signOut: Signing out from Supabase');
-        await authService.signOut();
+        try {
+          await withTimeout(
+            authService.signOut(),
+            5000, // 5 second timeout
+            'Sign out request timed out'
+          );
+          console.log('🔑 AuthContext.signOut: Supabase sign out completed');
+        } catch (error) {
+          console.error('🔑 AuthContext.signOut: Supabase sign out failed:', error);
+          // Continue with local cleanup even if Supabase sign out fails
+        }
       }
       
-      // Navigate to login page to ensure complete state reset
+      // Force page reload to ensure complete state reset
       console.log('🔑 AuthContext.signOut: Navigating to login page to ensure complete state reset');
-      window.location.href = '/login'; // Navigate to login page instead of home
+      window.location.replace('/login'); // Use replace to prevent back button issues
       
     } catch (error) {
       console.error('🔑 AuthContext.signOut: Error during sign out:', error);
@@ -304,9 +359,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Even if there's an error, clear local state and navigate to login
       setUser(null);
       setProfile(null);
-      window.location.href = '/login';
-    } finally {
-      setLoading(false);
+      
+      // Force reload to ensure clean state
+      window.location.replace('/login');
     }
   };
 

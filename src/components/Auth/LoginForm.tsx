@@ -1,16 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { AlertCircle, LogIn, Shield } from 'lucide-react';
+import { AlertCircle, LogIn, Shield, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { debugAuthentication, logAuthDebugInfo } from '../../utils/authDebug';
 
 export function LoginForm() {
-  const [email, setEmail] = useState('ckhoury100@gmail.com');
-  const [password, setPassword] = useState('EliteAtom22_');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  // Check Supabase connection on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Connection check failed:', error);
+          setConnectionStatus('error');
+        } else {
+          console.log('Connection check successful');
+          setConnectionStatus('connected');
+        }
+      } catch (error) {
+        console.error('Connection check exception:', error);
+        setConnectionStatus('error');
+      }
+    };
+    
+    checkConnection();
+  }, []);
 
   // Clear form fields when user signs out
   useEffect(() => {
@@ -26,12 +50,34 @@ export function LoginForm() {
     setError('');
     setIsLoading(true);
 
+    // Client-side validation
+    if (!email.trim()) {
+      setError('Email is required');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!password.trim()) {
+      setError('Password is required');
+      setIsLoading(false);
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
     try {
+      console.log('🔑 LoginForm: Attempting sign in with email:', email);
       await signIn(email, password);
       toast.success('Successfully signed in!');
       navigate('/'); // Redirect to dashboard after successful login
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      console.error('🔑 LoginForm: Sign in failed:', errorMessage);
       setError(errorMessage);
       
       // Show toast notification for better user feedback
@@ -41,6 +87,10 @@ export function LoginForm() {
         });
       } else if (errorMessage.includes('credentials') || errorMessage.includes('password')) {
         toast.error('Invalid login credentials. Please check your email and password.', {
+          duration: 5000,
+        });
+      } else if (errorMessage.includes('admin')) {
+        toast.error('Access denied. Admin privileges required.', {
           duration: 5000,
         });
       } else {
@@ -66,6 +116,28 @@ export function LoginForm() {
         <div className="p-6 text-center border-b">
           <h1 className="text-2xl font-bold">BreakFree CMS</h1>
           <p className="text-sm text-gray-600">Sign in to access the admin dashboard</p>
+          
+          {/* Connection Status Indicator */}
+          <div className="mt-2">
+            {connectionStatus === 'checking' && (
+              <div className="flex items-center justify-center space-x-2 text-yellow-600">
+                <div className="w-3 h-3 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs">Checking connection...</span>
+              </div>
+            )}
+            {connectionStatus === 'connected' && (
+              <div className="flex items-center justify-center space-x-2 text-green-600">
+                <CheckCircle className="w-3 h-3" />
+                <span className="text-xs">Connected to Supabase</span>
+              </div>
+            )}
+            {connectionStatus === 'error' && (
+              <div className="flex items-center justify-center space-x-2 text-red-600">
+                <XCircle className="w-3 h-3" />
+                <span className="text-xs">Connection error - check environment variables</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -73,6 +145,23 @@ export function LoginForm() {
               <div className="flex items-center space-x-2 text-red-700 bg-red-50 p-3 rounded-md">
                 <AlertCircle className="w-5 h-5" />
                 <span className="text-sm">{error}</span>
+              </div>
+            )}
+            
+            {/* Environment Check Warning */}
+            {connectionStatus === 'error' && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <div className="flex items-center space-x-2 text-yellow-800">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Configuration Issue</span>
+                </div>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Unable to connect to Supabase. Please check your environment variables:
+                </p>
+                <ul className="text-xs text-yellow-600 mt-2 space-y-1">
+                  <li>• VITE_SUPABASE_URL</li>
+                  <li>• VITE_SUPABASE_ANON_KEY</li>
+                </ul>
               </div>
             )}
 
@@ -85,6 +174,7 @@ export function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
+                autoComplete="email"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -98,6 +188,7 @@ export function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
+                autoComplete="current-password"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -105,7 +196,7 @@ export function LoginForm() {
             <button
               type="submit"
               className="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
-              disabled={isLoading}
+              disabled={isLoading || connectionStatus === 'error'}
             >
               {isLoading ? (
                 <>
@@ -120,6 +211,21 @@ export function LoginForm() {
               )}
             </button>
             
+            {/* Admin User Creation Helper */}
+            {connectionStatus === 'connected' && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <h4 className="text-sm font-medium text-blue-800 mb-2">First Time Setup?</h4>
+                <p className="text-xs text-blue-700 mb-2">
+                  If you haven't created an admin user yet:
+                </p>
+                <ol className="text-xs text-blue-600 space-y-1">
+                  <li>1. Go to your Supabase project dashboard</li>
+                  <li>2. Navigate to Authentication → Users</li>
+                  <li>3. Create a new user with admin email</li>
+                  <li>4. Run the admin user migration</li>
+                </ol>
+              </div>
+            )}
             {error && error.includes('connection') && (
               <div className="text-center">
                 <p className="text-xs text-gray-500 mt-2">
@@ -130,6 +236,17 @@ export function LoginForm() {
             
             {/* Development Fallback Button */}
             <div className="mt-4 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={async () => {
+                  await logAuthDebugInfo();
+                  toast.info('Debug information logged to console');
+                }}
+                className="w-full inline-flex items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors mb-2"
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Debug Authentication
+              </button>
               <button
                 type="button"
                 onClick={handleFallbackAccess}

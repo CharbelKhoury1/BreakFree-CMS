@@ -131,7 +131,11 @@ const testConnection = async () => {
         // Check for specific error types
         if (dbError.message?.includes('permission denied')) {
           console.error('❌ Database permission error. Please check your RLS policies and user permissions.');
-          throw new Error(`Database permission error: ${dbError.message}`);
+          throw new Error(`Database permission error. Please ensure the profiles table exists and RLS policies are configured correctly.`);
+        }
+        
+        if (dbError.message?.includes('relation') && dbError.message?.includes('does not exist')) {
+          throw new Error('Database tables not found. Please run the database migrations first.');
         }
         
         throw new ConnectionError(`Database connection failed: ${dbError.message}`);

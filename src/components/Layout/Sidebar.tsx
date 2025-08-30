@@ -34,7 +34,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleSignOut = () => {
-    signOut();
+    // Add confirmation for sign out
+    if (window.confirm('Are you sure you want to sign out?')) {
+      console.log('🔑 Sidebar: User confirmed sign out');
+      signOut();
+    }
     onClose();
   };
 

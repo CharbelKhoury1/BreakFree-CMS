@@ -8,6 +8,17 @@ export class AuthService {
     console.log('🔐 AuthService.signIn: Starting authentication process', { email });
     
     try {
+      // Validate inputs
+      if (!email || !password) {
+        throw new AuthenticationError('Email and password are required');
+      }
+      
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new AuthenticationError('Please enter a valid email address');
+      }
+      
       console.log('🔐 AuthService.signIn: Calling Supabase auth.signInWithPassword with timeout');
       
       // Add timeout to prevent infinite loading
@@ -18,7 +29,7 @@ export class AuthService {
       
       const { data, error } = await withTimeout(
         authPromise,
-        10000, // 10 second timeout
+        15000, // 15 second timeout for better reliability
         'Authentication request timed out. Please check your connection and try again.'
       );
 
@@ -37,8 +48,20 @@ export class AuthService {
           throw new AuthenticationError('Invalid email or password. Please check your credentials and try again.');
         }
         
+        if (error.message?.includes('Email not confirmed')) {
+          throw new AuthenticationError('Please check your email and click the confirmation link before signing in.');
+        }
+        
+        if (error.message?.includes('Too many requests')) {
+          throw new AuthenticationError('Too many login attempts. Please wait a few minutes before trying again.');
+        }
+        
         if (error.message?.includes('connection') || error.message?.includes('network')) {
           throw new ConnectionError('Unable to connect to authentication service. Please check your internet connection.');
+        }
+        
+        if (error.message?.includes('User not found')) {
+          throw new AuthenticationError('No account found with this email address. Please check your email or contact your administrator.');
         }
         
         throw new AuthenticationError(error.message || 'Authentication failed. Please try again.');
@@ -47,6 +70,11 @@ export class AuthService {
       if (!data.user) {
         console.error('🔐 AuthService.signIn: No user data received from Supabase');
         throw new AuthenticationError('Authentication failed. No user data received.');
+      }
+      
+      if (!data.session) {
+        console.error('🔐 AuthService.signIn: No session data received from Supabase');
+        throw new AuthenticationError('Authentication failed. No session created.');
       }
 
       console.log('🔐 AuthService.signIn: Authentication completed successfully');
@@ -68,8 +96,30 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    console.log('🔐 AuthService.signOut: Starting Supabase sign out');
+    
+    try {
+      // Sign out from all sessions
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        console.error('🔐 AuthService.signOut: Supabase error:', error);
+        
+        // Don't throw error for certain non-critical cases
+        if (error.message?.includes('session_not_found') || 
+            error.message?.includes('invalid_token')) {
+          console.warn('🔐 AuthService.signOut: Session already invalid, continuing with local cleanup');
+          return;
+        }
+        
+        throw error;
+      }
+      
+      console.log('🔐 AuthService.signOut: Successfully signed out from Supabase');
+    } catch (error) {
+      console.error('🔐 AuthService.signOut: Failed to sign out from Supabase:', error);
+      throw error;
+    }
   }
 
   async getCurrentUser() {
