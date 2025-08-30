@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -17,15 +17,20 @@ import {
   Mail,
   Phone,
   MapPin,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
   Plus,
   Download,
-  Upload
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  Settings,
+  Lock,
+  Activity,
+  X,
+  Save
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
 
 interface User {
   id: string;
@@ -39,6 +44,10 @@ interface User {
   phone?: string;
   location?: string;
   permissions: string[];
+  full_name?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface Role {
@@ -168,27 +177,71 @@ export function UserManagement() {
   const [editForm, setEditForm] = useState<Partial<User>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleForm, setRoleForm] = useState<Partial<Role>>({});
   const [roleFormErrors, setRoleFormErrors] = useState<Record<string, string>>({});
-  const itemsPerPage = 10;
+  const usersPerPage = 10;
 
-  // Filter and search users
+  // Load users from Supabase
+  useEffect(() => {
+    const loadUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading users:', error);
+          toast.error('Failed to load users');
+          return;
+        }
+
+        if (data) {
+          const formattedUsers: User[] = data.map(profile => ({
+            id: profile.id,
+            name: profile.full_name || 'Unknown User',
+            email: profile.email,
+            avatar: profile.avatar_url,
+            role: profile.role || 'user',
+            status: 'active' as const, // Default status
+            lastLogin: 'Recently',
+            joinDate: profile.created_at || new Date().toISOString(),
+            permissions: profile.role === 'admin' ? ['read', 'write', 'delete'] : ['read']
+          }));
+          setUsers(formattedUsers);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+        toast.error('Failed to load users');
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
+
+  // Filter users based on search term, status, and role
   const filteredUsers = useMemo(() => {
-    return mockUsers.filter(user => {
+    return users.filter(user => {
       const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            user.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      
       return matchesSearch && matchesStatus && matchesRole;
     });
-  }, [searchTerm, statusFilter, roleFilter]);
+  }, [users, searchTerm, statusFilter, roleFilter]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
   const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
   );
 
   const getStatusIcon = (status: string) => {
@@ -430,28 +483,22 @@ export function UserManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">User Management</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage users, roles, and permissions</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => toast.info('Add user functionality')}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Add User
-          </button>
-          <button
-            onClick={() => toast.info('Export functionality')}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </button>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={() => toast.info('Add user functionality')}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Add User
+        </button>
+        <button
+          onClick={() => toast.info('Export functionality')}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Export
+        </button>
       </div>
 
       {/* Tabs */}
@@ -549,7 +596,14 @@ export function UserManagement() {
 
           {/* Users Table */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/20 border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
+            {loadingUsers ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading users...</span>
+              </div>
+            ) : (
+              <>
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
@@ -679,7 +733,7 @@ export function UserManagement() {
               <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
+                    Showing {(currentPage - 1) * usersPerPage + 1} to {Math.min(currentPage * usersPerPage, filteredUsers.length)} of {filteredUsers.length} users
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -702,6 +756,8 @@ export function UserManagement() {
                   </div>
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         </div>

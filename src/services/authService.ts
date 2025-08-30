@@ -88,27 +88,38 @@ export class AuthService {
       
       const { data, error } = await withTimeout(
         profilePromise,
-        8000, // 8 second timeout
+        15000, // Increased to 15 second timeout
         'Failed to load user profile. Please check your connection and try again.'
       );
 
       if (error) {
-        if (error.message?.includes('connection') || error.message?.includes('network')) {
-          throw new ConnectionError('Unable to connect to user profile service. Please check your internet connection.');
+        console.error('🔐 AuthService.getUserProfile: Database error', error);
+        
+        if (error.message?.includes('connection') || error.message?.includes('network') || error.message?.includes('timeout')) {
+          throw new ConnectionError('Unable to connect to user profile service. Please check your internet connection and try again.');
         }
-        throw error;
+        
+        if (error.message?.includes('permission denied') || error.message?.includes('RLS')) {
+          throw new Error('Access denied. Please ensure you have permission to access this profile.');
+        }
+        
+        throw new Error(`Profile lookup failed: ${error.message}`);
       }
       
       if (!data) {
-        throw new Error('User profile not found.');
+        throw new Error('User profile not found. Please contact support if this issue persists.');
       }
       
+      console.log('🔐 AuthService.getUserProfile: Profile loaded successfully', { userId, role: data.role });
       return data as Profile;
     } catch (error) {
+      console.error('🔐 AuthService.getUserProfile: Error occurred', error);
+      
       if (error instanceof TimeoutError || error instanceof ConnectionError) {
         throw error;
       }
-      throw new Error(error instanceof Error ? error.message : 'Failed to load user profile.');
+      
+      throw new Error(error instanceof Error ? error.message : 'Failed to load user profile. Please try again.');
     }
   }
 

@@ -26,11 +26,7 @@ export function ActivityLogsPage() {
           </div>
         </div>
 
-        {/* Page Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Logs</h1>
-          <p className="text-gray-600 dark:text-gray-300">Monitor system activity, user actions, and audit trail information</p>
-        </div>
+
 
         {/* Activity Logs Component */}
         <ActivityLogs />

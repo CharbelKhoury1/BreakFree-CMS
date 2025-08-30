@@ -5,8 +5,11 @@ import {
   FileText, 
   Settings, 
   PenTool,
-  Shield
+  Shield,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -16,6 +19,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { signOut, profile } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -26,6 +30,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const handleAdminClick = () => {
     navigate('/admin');
+    onClose();
+  };
+
+  const handleSignOut = () => {
+    signOut();
     onClose();
   };
 
@@ -95,26 +104,42 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 }
               }}
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-500 dark:bg-blue-600 flex items-center justify-center">
-                {/* Profile image will be displayed here when available */}
-                <img 
-                  src="https://trae-api-sg.mchost.guru/api/ide/v1/text_to_image?prompt=professional%20headshot%20of%20admin%20user%20with%20friendly%20expression&image_size=square" 
-                  alt="Admin User" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="w-full h-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-white font-semibold text-sm" style={{display: 'none'}}>
-                  A
-                </div>
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt={profile.full_name || 'User'} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <User className="w-4 h-4 text-gray-400" style={{display: profile?.avatar_url ? 'none' : 'block'}} />
               </div>
               <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">Admin User</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Dashboard Access</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{profile?.full_name || 'Admin User'}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{profile?.role || 'Dashboard Access'}</p>
               </div>
             </div>
+            
+            {/* Sign Out Button */}
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center px-3 py-2 mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-150"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSignOut();
+                }
+              }}
+            >
+              <LogOut className="w-4 h-4 mr-3" />
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

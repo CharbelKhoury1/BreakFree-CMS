@@ -26,11 +26,7 @@ export function BackupExportPage() {
           </div>
         </div>
 
-        {/* Page Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Backup & Export</h1>
-          <p className="text-gray-600 dark:text-gray-300">Manage database backups, content export, and data import operations</p>
-        </div>
+
 
         {/* Backup Export Component */}
         <BackupExport />

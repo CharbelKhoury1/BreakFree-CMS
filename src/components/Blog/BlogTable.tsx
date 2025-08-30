@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { 
@@ -21,7 +22,9 @@ interface BlogTableProps {
 
 export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }: BlogTableProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -127,66 +130,26 @@ export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }:
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="relative" ref={openDropdown === blog.id ? dropdownRef : null}>
+                  <div className="relative">
                     <button
+                      ref={openDropdown === blog.id ? buttonRef : null}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setOpenDropdown(openDropdown === blog.id ? null : blog.id);
+                        if (openDropdown === blog.id) {
+                          setOpenDropdown(null);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setDropdownPosition({
+                            top: rect.bottom + window.scrollY + 8,
+                            left: rect.right - 192 + window.scrollX // 192px is dropdown width (w-48)
+                          });
+                          setOpenDropdown(blog.id);
+                        }
                       }}
                       className="inline-flex items-center p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
-                    
-                    {openDropdown === blog.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/20 z-50">
-                        <div className="py-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(blog);
-                              setOpenDropdown(null);
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onTogglePublish(blog);
-                              setOpenDropdown(null);
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            {blog.published ? 'Unpublish' : 'Publish'}
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View Post
-                          </button>
-                          <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(blog);
-                              setOpenDropdown(null);
-                            }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -194,6 +157,69 @@ export function BlogTable({ blogs, loading, onEdit, onDelete, onTogglePublish }:
           </tbody>
         </table>
       </div>
+      
+      {/* Portal-rendered dropdown to avoid overflow constraints */}
+      {openDropdown && createPortal(
+        <div 
+          ref={dropdownRef}
+          className="fixed w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/20 z-50"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`
+          }}
+        >
+          <div className="py-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const blog = blogs.find(b => b.id === openDropdown);
+                if (blog) onEdit(blog);
+                setOpenDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const blog = blogs.find(b => b.id === openDropdown);
+                if (blog) onTogglePublish(blog);
+                setOpenDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              {blogs.find(b => b.id === openDropdown)?.published ? 'Unpublish' : 'Publish'}
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Post
+            </button>
+            <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                const blog = blogs.find(b => b.id === openDropdown);
+                if (blog) onDelete(blog);
+                setOpenDropdown(null);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

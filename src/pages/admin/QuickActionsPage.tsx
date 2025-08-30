@@ -26,11 +26,7 @@ export function QuickActionsPage() {
           </div>
         </div>
 
-        {/* Page Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quick Actions</h1>
-          <p className="text-gray-600 dark:text-gray-300">Perform common administrative tasks and system maintenance operations</p>
-        </div>
+
 
         {/* Quick Actions Component */}
         <QuickActions />

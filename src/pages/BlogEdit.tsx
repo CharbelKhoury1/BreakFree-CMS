@@ -24,7 +24,19 @@ export function BlogEdit() {
       }
     } catch (error) {
       console.error('Error updating blog:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to save blog post';
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate')) {
+          errorMessage = 'A blog post with this title already exists. Please use a different title.';
+        } else {
+          errorMessage = `Failed to save blog post: ${error.message}`;
+        }
+      }
+      
+      // Re-throw with better error message
+      throw new Error(errorMessage);
     }
   };
 

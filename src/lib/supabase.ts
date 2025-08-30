@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 import { ConnectionError } from '../utils/timeout';
+import { isDevelopmentMode } from '../utils/developmentMode';
 
 // Get environment variables with debugging
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -50,55 +51,107 @@ let connectionStatus = {
   lastChecked: Date.now()
 };
 
-// Test the connection with timeout
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second
+  maxDelay: 10000, // 10 seconds
+  timeoutMs: 15000 // 15 seconds
+};
+
+// Exponential backoff retry function
+const retryWithBackoff = async <T>(
+  operation: () => Promise<T>,
+  retries: number = RETRY_CONFIG.maxRetries,
+  delay: number = RETRY_CONFIG.baseDelay
+): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries <= 0) {
+      throw error;
+    }
+    
+    console.warn(`🔄 Operation failed, retrying in ${delay}ms... (${retries} retries left)`, error);
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    // Exponential backoff with jitter
+    const nextDelay = Math.min(delay * 2 + Math.random() * 1000, RETRY_CONFIG.maxDelay);
+    return retryWithBackoff(operation, retries - 1, nextDelay);
+  }
+};
+
+// Test the connection with timeout and retry logic
 const testConnection = async () => {
+  // Skip connection test in development mode
+  if (isDevelopmentMode()) {
+    console.log('🔌 Development mode: Skipping Supabase connection test');
+    connectionStatus.auth = true;
+    connectionStatus.database = true;
+    connectionStatus.lastChecked = Date.now();
+    return;
+  }
+
   try {
     console.log('🔌 Testing Supabase connection...');
     
-    // Test auth connection
-    const authPromise = supabase.auth.getSession();
-    const authTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new ConnectionError('Auth connection timeout')), 5000)
-    );
-    
-    const { data, error } = await Promise.race([authPromise, authTimeout]) as any;
-    
-    if (error) {
-      console.error('🔌 Supabase auth connection error:', error);
-      connectionStatus.auth = false;
-    } else {
-      console.log('🔌 Supabase auth connected successfully', { hasSession: !!data.session });
-      connectionStatus.auth = true;
-    }
-    
-    // Test database connectivity
-    const dbPromise = supabase.from('profiles').select('count', { count: 'exact', head: true });
-    const dbTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new ConnectionError('Database connection timeout')), 5000)
-    );
-    
-    const { count, error: dbError } = await Promise.race([dbPromise, dbTimeout]) as any;
-    
-    if (dbError) {
-      console.error('🔌 Supabase database connection error:', dbError);
-      connectionStatus.database = false;
+    // Test auth connection with retry
+    await retryWithBackoff(async () => {
+      const authPromise = supabase.auth.getSession();
+      const authTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new ConnectionError('Auth connection timeout')), RETRY_CONFIG.timeoutMs)
+      );
       
-      // Check for specific error types
-      if (dbError.message?.includes('permission denied')) {
-        console.error('❌ Database permission error. Please check your RLS policies and user permissions.');
+      const { data, error } = await Promise.race([authPromise, authTimeout]) as any;
+      
+      if (error) {
+        console.error('🔌 Supabase auth connection error:', error);
+        connectionStatus.auth = false;
+        throw new ConnectionError(`Auth connection failed: ${error.message}`);
+      } else {
+        console.log('🔌 Supabase auth connected successfully', { hasSession: !!data.session });
+        connectionStatus.auth = true;
       }
-    } else {
-      console.log('🔌 Supabase database connected successfully', { profileCount: count });
-      connectionStatus.database = true;
-    }
+    });
+    
+    // Test database connectivity with retry
+    await retryWithBackoff(async () => {
+      const dbPromise = supabase.from('profiles').select('count', { count: 'exact', head: true });
+      const dbTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new ConnectionError('Database connection timeout')), RETRY_CONFIG.timeoutMs)
+      );
+      
+      const { count, error: dbError } = await Promise.race([dbPromise, dbTimeout]) as any;
+      
+      if (dbError) {
+        console.error('🔌 Supabase database connection error:', dbError);
+        connectionStatus.database = false;
+        
+        // Check for specific error types
+        if (dbError.message?.includes('permission denied')) {
+          console.error('❌ Database permission error. Please check your RLS policies and user permissions.');
+          throw new Error(`Database permission error: ${dbError.message}`);
+        }
+        
+        throw new ConnectionError(`Database connection failed: ${dbError.message}`);
+      } else {
+        console.log('🔌 Supabase database connected successfully', { profileCount: count });
+        connectionStatus.database = true;
+      }
+    });
     
     connectionStatus.lastChecked = Date.now();
+    console.log('✅ Supabase connection test completed successfully');
     
   } catch (error) {
-    console.error('🔌 Supabase connection test failed:', error);
+    console.error('🔌 Supabase connection test failed after retries:', error);
     connectionStatus.auth = false;
     connectionStatus.database = false;
     connectionStatus.lastChecked = Date.now();
+    
+    // Don't throw the error to prevent app crashes
+    // The connection status will reflect the failure
   }
 };
 
@@ -110,3 +163,9 @@ export const getConnectionStatus = () => ({ ...connectionStatus });
 
 // Export connection test function
 export const testSupabaseConnection = testConnection;
+
+// Export retry utility for use in other services
+export const retryOperation = retryWithBackoff;
+
+// Export retry configuration
+export const SUPABASE_RETRY_CONFIG = RETRY_CONFIG;

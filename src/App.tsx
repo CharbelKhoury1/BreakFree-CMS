@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -55,8 +55,7 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* TEMPORARY: Login route disabled for development */}
-            {/* <Route path="/login" element={<LoginForm />} /> */}
+            <Route path="/login" element={<LoginForm />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -117,6 +116,8 @@ function App() {
                 <QuickActionsPage />
               </ProtectedRoute>
             } />
+            {/* Default route - redirect to login for unmatched paths */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
           <Toaster position="top-right" richColors />
         </Router>

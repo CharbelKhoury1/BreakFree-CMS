@@ -7,7 +7,7 @@ A comprehensive, production-ready admin dashboard for managing blog content buil
 - **Complete Authentication System**: Secure login with role-based access control
 - **Blog Management**: Full CRUD operations with rich text editing
 - **Media Management**: Image upload to Supabase Storage with optimization
-- **SEO Tools**: Meta fields, auto-generated slugs, and content optimization
+- **SEO Tools**: Meta fields and content optimization
 - **Advanced Filtering**: Search, tag filtering, and status-based filtering
 - **Responsive Design**: Mobile-first approach with beautiful UI
 - **Real-time Updates**: Auto-save functionality and live preview
@@ -29,7 +29,7 @@ The project includes migration files that will create the necessary database str
 - `blogs` table with full blog management capabilities
 - Storage bucket for blog images
 - Row Level Security (RLS) policies
-- Database functions for slug generation and view counting
+- Database functions for view counting
 
 ### 3. Admin User Creation
 
@@ -74,7 +74,7 @@ supabase/
 ### Blog Management
 - Rich text editor with live preview using TipTap
 - Image upload and management with Supabase Storage
-- Auto-generated slugs and excerpts
+- Auto-generated excerpts
 - Tag management with autocomplete
 - SEO optimization tools
 - Draft/published workflow
